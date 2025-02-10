@@ -38,6 +38,7 @@ static k_s32 g_blacklight_delay_ms = DELAY_MS_BACKLIGHT_FIRST;
 
 static void hx8399_v2_init(k_u8 test_mode_en)
 {
+    k_u8 param0[] = {0x01}; // soft reset
     k_u8 param1[] = {0xB9, 0xFF, 0x83, 0x99};
     k_u8 param21[] = {0xD2, 0xAA};
     k_u8 param2[] = {0xB1, 0x02, 0x04, 0x71, 0x91, 0x01, 0x32, 0x33, 0x11, 0x11, 0xab, 0x4d, 0x56, 0x73, 0x02, 0x02};
@@ -59,6 +60,9 @@ static void hx8399_v2_init(k_u8 test_mode_en)
     k_u8 param23[] = {0x11};
     k_u8 param24[] = {0x29};
     k_u8 pag20[50] = {0xB2, 0x0b, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77};               // 蓝色
+
+    connecter_dsi_send_pkg(param0, sizeof(param0));
+    connector_delay_us(120 * 1000);
 
     connecter_dsi_send_pkg(param1, sizeof(param1));
     connecter_dsi_send_pkg(param21, sizeof(param21));
@@ -88,7 +92,7 @@ static void hx8399_v2_init(k_u8 test_mode_en)
     connecter_dsi_send_pkg(param16, sizeof(param16));
     connecter_dsi_send_pkg(param22, sizeof(param22));
     connecter_dsi_send_pkg(param23, 1);
-    connector_delay_us(300);
+    connector_delay_us(100 * 1000);
     connecter_dsi_send_pkg(param24, 1);
     connector_delay_us(100);
 }

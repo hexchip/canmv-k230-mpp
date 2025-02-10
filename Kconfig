@@ -327,7 +327,7 @@ menu "MPP Configuration"
                     default 0x3b
             endif
 
-        config MPP_DSI_ENABLE_HDMI_HX8399
+        config MPP_DSI_ENABLE_LCD_HX8399
             bool "Enable LCD Display Converter HX8399"
             default n
 

@@ -144,9 +144,9 @@ struct connector_driver_dev* connector_drv_list[] = {
     &lt9611_connector_drv,
 #endif // CONFIG_MPP_DSI_ENABLE_HDMI_LT9611
 
-#ifdef CONFIG_MPP_DSI_ENABLE_HDMI_HX8399
+#ifdef CONFIG_MPP_DSI_ENABLE_LCD_HX8399
     &hx8399_connector_drv,
-#endif // CONFIG_MPP_DSI_ENABLE_HDMI_HX8399
+#endif // CONFIG_MPP_DSI_ENABLE_LCD_HX8399
 
 #ifdef CONFIG_MPP_DSI_ENABLE_LCD_ST7701
     &st7701_connector_drv,
