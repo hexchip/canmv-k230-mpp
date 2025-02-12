@@ -342,7 +342,7 @@ k_connector_info connector_info_list[] = {
             .vback_porch = 250,
             .vfront_porch = 250,
         },
-        .type = ST7701_MIPI_2LANE_368X552_60FPS, // maybe should change it
+        .type = ST7701_V1_MIPI_2LAN_368X544_60FPS, // maybe should change it
     },
     {
         "ili9806",

@@ -444,7 +444,7 @@ static k_s32 st7701_dsi_resolution_init(k_connector_info *info)
         else
             st7701_480x640_init(0);
     }
-    else if (info->type == ST7701_MIPI_2LANE_368X552_60FPS)
+    else if (info->type == ST7701_V1_MIPI_2LAN_368X544_60FPS)
     {
         if(info->screen_test_mode)
             st7701_368x552_init(1);
