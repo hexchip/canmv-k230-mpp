@@ -344,6 +344,18 @@ static void *output_thread(void *arg)
                 config.h = status.width;//1920;
                 config.ro = K_ROTATION_90;
             }
+            else if (g_connector_type == ST7701_V1_MIPI_2LAN_480X800_30FPS)
+            {
+                config.w = status.height;
+                config.h = status.width;
+                config.ro = K_ROTATION_90;
+            }
+            else if (g_connector_type == LT9611_MIPI_4LAN_1920X1080_30FPS)
+            {
+                config.w = status.width ;
+                config.h = status.height;
+                config.ro = 0;
+            }
             else
             {
                 config.w = status.width ;
