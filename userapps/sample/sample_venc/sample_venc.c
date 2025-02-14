@@ -926,16 +926,36 @@ k_s32 sample_venc_osd_border_h265(k_vicap_sensor_type sensor_type)
 
 void sample_venc_usage(char *sPrgNm)
 {
-    printf("Usage : %s [index] -sensor [sensor_index] -o [filename]\n", sPrgNm);
+    printf("Usage : %s [index] -o [filename]\n", sPrgNm);
     printf("index:\n");
     printf("\t  0) H.265e.\n");
     printf("\t  1) JPEG encode.\n");
     printf("\t  2) OSD + H.264e.\n");
     printf("\t  3) OSD + Border + H.265e.\n");
-    printf("\n");
-    printf("sensor_index:\n");
-    printf("\t  see vicap doc\n");
     return;
+}
+
+
+static k_s32 kd_sample_sensor_auto_detect(k_vicap_sensor_type* sensor_type)
+{
+    k_vicap_probe_config probe_cfg;
+    k_vicap_sensor_info sensor_info;
+
+    probe_cfg.csi_num = CONFIG_MPP_SENSOR_DEFAULT_CSI + 1;
+    probe_cfg.width = 1920;
+    probe_cfg.height = 1080;
+    probe_cfg.fps = 30;
+
+    if(0x00 != kd_mpi_sensor_adapt_get(&probe_cfg, &sensor_info)) {
+        printf("sample_vicap, can't probe sensor on %d, output %dx%d@%d\n", probe_cfg.csi_num, probe_cfg.width, probe_cfg.height, probe_cfg.fps);
+
+        return -1;
+    }
+
+    *sensor_type = sensor_info.sensor_type;
+    printf("detect sensor type: %d\n", sensor_info.sensor_type);
+
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -963,11 +983,7 @@ int main(int argc, char *argv[])
     case_index = atoi(argv[1]);
     for (int i = 2; i < argc; i++)
     {
-        if (strcmp(argv[i], "-sensor") == 0)
-        {
-            sensor_type = (k_vicap_sensor_type)atoi(argv[i + 1]);
-        }
-        else if (strcmp(argv[i], "-o") == 0)
+        if (strcmp(argv[i], "-o") == 0)
         {
             strcpy(out_filename, argv[i + 1]);
             if ((output_file = fopen(out_filename, "wb")) == NULL)
@@ -990,22 +1006,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (0 != kd_sample_sensor_auto_detect(&sensor_type))
     {
-        k_vicap_probe_config probe_cfg;
-        k_vicap_sensor_info sensor_info;
-
-        probe_cfg.csi_num = CONFIG_MPP_SENSOR_DEFAULT_CSI + 1;
-        probe_cfg.width = 1920;
-        probe_cfg.height = 1080;
-        probe_cfg.fps = 30;
-
-        if(0x00 != kd_mpi_sensor_adapt_get(&probe_cfg, &sensor_info)) {
-            printf("sample_vicap, can't probe sensor on %d, output %dx%d@%d\n", probe_cfg.csi_num, probe_cfg.width, probe_cfg.height, probe_cfg.fps);
-
-            return -1;
-        }
-
-        sensor_type = sensor_info.sensor_type;
+        return -1;
     }
 
     memset(&g_venc_conf, 0, sizeof(venc_conf_t));
