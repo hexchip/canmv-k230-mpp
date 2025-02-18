@@ -235,6 +235,13 @@ void connector_set_pixclk(k_u32 div)
     k230_set_pixclk(div);
 }
 
+k_u32 connector_set_cmd_buff_num(k_u32 buff_num)
+{
+    kd_vo_set_cmd_buff_num(buff_num);
+
+    return 0;
+}
+
 k_s32 connector_send_cmd(const k_u8 *cmd_seq, size_t cmd_size, k_bool dump)
 {
     uint32_t cmd_remain = 0;

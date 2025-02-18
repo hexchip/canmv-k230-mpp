@@ -89,6 +89,7 @@ typedef struct {
     k_u32 bg_color;
     k_u32 intr_line;
     k_u32 pixclk_div;
+    k_u32 buff_num;
     k_dsi_lan_num lan_num;
     k_dsi_work_mode work_mode;
     k_vo_dsi_cmd_mode cmd_mode;
@@ -150,6 +151,7 @@ typedef struct {
     k_u32 fps;
     k_dsi_lan_num lan_num;
     k_u32 intr_line;
+    k_u32 buff_num;
 
     k_u32 hdisplay;
     k_u32 hsync_len;

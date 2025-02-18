@@ -54,6 +54,7 @@ static void print_connector_info(const k_connector_info* connector) {
     printf("  Background Color: 0x%08X\n", connector->bg_color);
     printf("  Interrupt Line: %u\n", (1 << connector->intr_line));
     printf("  Pixel Clock Divider: %u\n", connector->pixclk_div);
+    printf("  Buffer Number: %u\n", connector->buff_num);
 
     // Print LAN number (assuming it is an enum)
     switch (connector->lan_num) {
@@ -153,6 +154,7 @@ static void print_user_config(k_connector_debugger_config *config)
     printf(" pclk: %u\n", config->pclk);
     printf(" fps: %u\n", config->fps);
     printf(" lan_num: %u\n", config->lan_num);
+    printf(" buff_num: %u\n", config->buff_num);
     printf(" hdisplay: %u\n", config->hdisplay);
     printf(" hsync_len: %u\n", config->hsync_len);
     printf(" hback_porch: %u\n", config->hback_porch);
@@ -436,6 +438,7 @@ static int kd_mpi_calc_timings(k_connector_debugger_config *config, k_connector_
     info->intr_line = (0x00 == config->intr_line) ? intr_line : config->intr_line;
     info->pixclk_div = pclk_div;
     info->lan_num = config->lan_num;
+    info->buff_num = config->buff_num;
     info->work_mode = K_BURST_MODE;
     info->cmd_mode = K_VO_LP_MODE;
 
@@ -599,6 +602,10 @@ static void parse_config(char *line, k_connector_debugger_config *config) {
         {
             config->vsync_len = value;
         } break;
+        case 0x109E7B57: /* 'buff_num' */
+        {
+            config->buff_num = value;
+        } break;
         default: {
             printf("unsupport config '%s'\n", line);
         } break;
@@ -741,6 +748,7 @@ void kd_mpi_connector_parse_setting(k_connector_info *info_list) {
     fd = -1;
 
     memset(&config, 0, sizeof(config));
+    config.buff_num = 1;
 
     next_line = (char *)file_data;
     do {

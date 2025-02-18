@@ -18,6 +18,8 @@ userapps/lib/libconnector.a
 userapps/lib/libfft.a
 userapps/lib/libpm.a
 userapps/lib/libsensor.a
+userapps/lib/libvg_lite.a
+userapps/lib/libvg_lite_util.a
 
 userapps/sample/elf/
 

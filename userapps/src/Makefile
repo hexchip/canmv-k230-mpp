@@ -1,12 +1,9 @@
+subdirs-y := sensor connector fft cipher pm vg_lite
+
 all:
-	@cd sensor; make || exit 1
-	@cd connector; make || exit 1
-	@cd fft; make || exit 1
-	@cd cipher; make || exit 1
-	@cd pm; make || exit 1
+	@$(foreach dir,$(subdirs-y),make -C $(dir) all || exit $?;)
+	@echo "Make MPP Userapps done."
+
 clean:
-	@cd sensor; make clean
-	@cd fft; make clean
-	@cd cipher; make clean
-	@cd connector; make clean
-	@cd pm; make clean
+	@$(foreach dir,$(subdirs-y),make -C $(dir) clean || exit $?;)
+	@echo "Make MPP Userapps clean done."

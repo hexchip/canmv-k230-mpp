@@ -619,6 +619,8 @@ k_s32 lt9611_init(void *ctx, k_connector_info *info)
     ret |= lt9611_enable_hdmi_out(lt9611_dev);
     if(info->pixclk_div != 0)
         connector_set_pixclk(info->pixclk_div);
+
+    ret |= connector_set_cmd_buff_num(info->buff_num);
     ret |= k230_vo_resolution_init(info->type, &info->resolution, info->bg_color, info->intr_line);
     ret |= k230_set_phy_freq(&info->phy_attr);
     ret |= k230_dsi_resolution_init(info);

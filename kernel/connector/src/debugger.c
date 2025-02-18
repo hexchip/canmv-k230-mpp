@@ -142,6 +142,7 @@ k_s32 connector_debug_init(void *ctx, k_connector_info *info)
         connector_set_pixclk(info->pixclk_div);
     }
 
+    ret |= connector_set_cmd_buff_num(info->buff_num);
     ret |= connector_debug_set_phy_freq(&info->phy_attr);
     ret |= connector_debug_dsi_resolution_init(info);
     ret |= connector_debug_vo_resolution_init(&info->resolution, info->bg_color, info->intr_line);

@@ -19,9 +19,9 @@ all: $(LIB) $(DWCFGS)
 	@-rm -rf $(OBJS)
 	rm -rf build
 	mkdir -p $(RTSMART_SRC_DIR)/userapps/root/bin/
-	cp $(PWD)/config/* $(RTSMART_SRC_DIR)/userapps/root/bin/
-	cp $(PWD)/dewarp/*.bin $(RTSMART_SRC_DIR)/userapps/root/bin/
-	echo "${PWD}/Makefile all"
+	cp $(LOCAL_SRC_DIR)/config/* $(RTSMART_SRC_DIR)/userapps/root/bin/
+	cp $(LOCAL_SRC_DIR)/dewarp/*.bin $(RTSMART_SRC_DIR)/userapps/root/bin/
+	echo "${LOCAL_SRC_DIR}/Makefile all"
 
 $(OBJS): %.o : %.c
 	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -c $< -o $@
@@ -37,7 +37,7 @@ $(DWCFGS): %.bin : %.yml k230dwmapgen
 	./build/k230dwmapgen-dump < $< > $@
 
 clean:
-	echo "${PWD}/Makefile clean"
+	echo "${LOCAL_SRC_DIR}/Makefile clean"
 	-rm -rf $(LIB)
 	-rm -f $(OBJS)
 	-rm -rf build
