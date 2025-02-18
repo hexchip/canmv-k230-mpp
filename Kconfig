@@ -2,8 +2,6 @@
 menu "MPP Configuration"
     menu "Sensor Configuration"
 
-        comment "Sensor Devices"
-
         choice MPP_DEFAULT_SENSOR_CSI_NUM
                 bool "Default SENSOR on CSI"
                 default MPP_DEFAULT_SENSOR_CSI_0
@@ -15,6 +13,8 @@ menu "MPP Configuration"
                 config MPP_DEFAULT_SENSOR_CSI_2
                     bool "2"
         endchoice
+
+        comment "Sensor Hardware Configuration"
 
         config MPP_SENSOR_DEFAULT_CSI
             int
@@ -148,7 +148,7 @@ menu "MPP Configuration"
                     default 3 if MPP_CSI_DEV2_MCLK_3
             endif
 
-        comment "Sensor Drivers"
+        comment "Sensor Drivers Configuration"
 
         menuconfig MPP_ENABLE_SENSOR_GC2093
             bool "Enable GC2093"
@@ -283,7 +283,7 @@ menu "MPP Configuration"
             default n
             select APP_ENABLE_DSI_DEBUGGER
 
-        comment "Display Drivers"
+        comment "Display Hardware Configuration"
 
         menuconfig MPP_ENABLE_DSI_HDMI
             bool "Enable HDMI Display Driver"
@@ -315,10 +315,10 @@ menu "MPP Configuration"
             bool "Enable VIRT Display Driver "
             default y
 
-        comment "Display Connector Drivers"
+        comment "Display Panle Drivers Configuration"
 
         menuconfig MPP_DSI_ENABLE_HDMI_LT9611
-            bool "Enable HDMI Display Converter LT9611"
+            bool "Enable HDMI Display Panel Driver LT9611"
             depends on MPP_ENABLE_DSI_HDMI
 
             if MPP_DSI_ENABLE_HDMI_LT9611
@@ -328,15 +328,15 @@ menu "MPP Configuration"
             endif
 
         config MPP_DSI_ENABLE_LCD_HX8399
-            bool "Enable LCD Display Converter HX8399"
+            bool "Enable LCD Display Panel Driver HX8399"
             default n
 
         config MPP_DSI_ENABLE_LCD_ST7701
-            bool "Enable LCD Display Converter ST7701s"
+            bool "Enable LCD Display Panel Driver ST7701"
             default n
 
         config MPP_DSI_ENABLE_LCD_ILI9806
-            bool "Enable LCD Display Converter ili9806"
+            bool "Enable LCD Display Panel Driver ili9806"
             default n
 
     endmenu
