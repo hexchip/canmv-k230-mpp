@@ -17,36 +17,21 @@ static void sigHandler(int sig_no) {
 }
 
 static void Usage() {
-    std::cout << "Usage: ./sample_rtspsever.elf [-v] [-s <sensor_type>] [-t <codec_type>] [-w <width>] [-h <height>] [-b <bitrate_kbps>] [-a <semitones>]" << std::endl;
-    std::cout << "-v: enable video session" << std::endl;
-    std::cout << "-s: the sensor type, default 7 :" << std::endl;
-    std::cout << "       see camera sensor doc." << std::endl;
+    std::cout << "Usage: ./sample_rtspsever.elf [-t <codec_type>] [-w <width>] [-h <height>] [-b <bitrate_kbps>]" << std::endl;
     std::cout << "-t: the video encoder type: h264/h265, default h265" << std::endl;
     std::cout << "-w: the video encoder width, default 1280" << std::endl;
     std::cout << "-h: the video encoder height, default 720" << std::endl;
     std::cout << "-b: the video encoder bitrate(kbps), default 2000" << std::endl;
-    std::cout << "-a: pitch shift semitones [-12,12], default 0" << std::endl;
     exit(-1);
 }
 
 int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
     int result;
     opterr = 0;
-    while ((result = getopt(argc, argv, "Hvs:n:t:w:h:b:a:")) != -1) {
+    while ((result = getopt(argc, argv, "Ht:w:h:b:")) != -1) {
         switch(result) {
         case 'H' : {
             Usage(); break;
-        }
-        case 'v' : {
-            config.video_valid = true;
-            break;
-        }
-        case 's' : {
-            int n = atoi(optarg);
-            if (n < 0 || n > 27) Usage();
-            config.sensor_type = (k_vicap_sensor_type)n;
-            config.video_valid = true;
-            break;
         }
         case 't': {
             std::string s = optarg;
@@ -77,15 +62,10 @@ int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
             config.video_valid = true;
             break;
         }
-        case 'a': {
-            int n = atoi(optarg);
-            if (n < -12 || n > 12) Usage();
-            config.pitch_shift_semitones = n;
-            break;
-        }
         default: Usage(); break;
         }
     }
+    config.video_valid = true;
     if (config.video_valid) {
         // validate the parameters... TODO
         std::cout << "Validate the input config, not implemented yet, TODO." << std::endl;
@@ -134,7 +114,14 @@ class MyRtspServer : public IOnBackChannel, public IOnAEncData, public IOnVEncDa
         }
     }
 
-    int Init(const KdMediaInputConfig &config, const std::string &stream_url = "test", int port = 8554) {
+    int Init(KdMediaInputConfig &config, const std::string &stream_url = "test", int port = 8554) {
+
+        if (0 != media_.DetectSensor(&config.sensor_type))
+        {
+            printf("kd_sample_sensor_auto_detect failed\n");
+            return -1;
+        }
+
         if (rtsp_server_.Init(port, this) < 0) {
             return -1;
         }

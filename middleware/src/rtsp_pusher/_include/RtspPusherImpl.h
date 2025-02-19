@@ -54,4 +54,5 @@ private:
 	pthread_mutex_t m_Lock;
 	pthread_t m_hConnectThread;
 	static bool  m_bFfmpegInit;
+	bool m_start_reconnect;
 };

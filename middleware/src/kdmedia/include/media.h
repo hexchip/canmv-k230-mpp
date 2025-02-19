@@ -57,6 +57,7 @@ class KdMedia {
   public:
     KdMedia();
     ~KdMedia();
+    int DetectSensor(k_vicap_sensor_type* sensor_type);
     int Init(const KdMediaInputConfig &config);
     int Init();
     int Deinit();
