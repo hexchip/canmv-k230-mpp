@@ -52,6 +52,7 @@ class KdMedia::Impl
 public:
     Impl() {}
     ~Impl() {}
+    int DetectSensor(k_vicap_sensor_type* sensor_type);
     int Init(const KdMediaInputConfig &config);
     int Init();
     int Deinit();
@@ -241,6 +242,33 @@ static k_s32 kd_sample_vicap_set_dev_attr(k_vicap_dev_set_info dev_info)
         return K_FAILED;
     }
     return K_SUCCESS;
+}
+
+static k_s32 kd_sample_sensor_auto_detect(k_vicap_sensor_type* sensor_type)
+{
+    k_vicap_probe_config probe_cfg;
+    k_vicap_sensor_info sensor_info;
+
+    probe_cfg.csi_num = CONFIG_MPP_SENSOR_DEFAULT_CSI + 1;
+    probe_cfg.width = 1920;
+    probe_cfg.height = 1080;
+    probe_cfg.fps = 30;
+
+    if(0x00 != kd_mpi_sensor_adapt_get(&probe_cfg, &sensor_info)) {
+        printf("sample_vicap, can't probe sensor on %d, output %dx%d@%d\n", probe_cfg.csi_num, probe_cfg.width, probe_cfg.height, probe_cfg.fps);
+
+        return -1;
+    }
+
+    *sensor_type = sensor_info.sensor_type;
+    printf("detect sensor type: %d\n", sensor_info.sensor_type);
+
+    return 0;
+}
+
+int KdMedia::Impl::DetectSensor(k_vicap_sensor_type* sensor_type)
+{
+    return kd_sample_sensor_auto_detect(sensor_type);
 }
 
 int KdMedia::Impl::Init(const KdMediaInputConfig &config)
@@ -1580,6 +1608,10 @@ int KdMedia::Impl::SendVideoData(const uint8_t *data, size_t size, uint64_t time
 KdMedia::KdMedia() : impl_(std::make_unique<Impl>()) {}
 KdMedia::~KdMedia() {}
 
+int KdMedia::DetectSensor(k_vicap_sensor_type* sensor_type)
+{
+    return impl_->DetectSensor(sensor_type);
+}
 int KdMedia::Init(const KdMediaInputConfig &config)
 {
     return impl_->Init(config);
