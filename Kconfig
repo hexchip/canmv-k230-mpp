@@ -341,6 +341,21 @@ menu "MPP Configuration"
 
     endmenu
 
+    menu "Middleware Configuration"
+        config MPP_ENABLE_MIDDLEWARE_LIB_FFMPEG
+            bool "Enable Build Lib ffmpeg"
+            default n
+        config MPP_ENABLE_MIDDLEWARE_LIB_X264
+            bool "Enable Build Lib X264"
+            default n
+            select MPP_ENABLE_MIDDLEWARE_LIB_FFMPEG
+        config MPP_ENABLE_MIDDLEWARE_LIB_RTSP_PUSHER
+            bool "Enable Build Lib Rtsp Pusher"
+            default n
+            select MPP_ENABLE_MIDDLEWARE_LIB_X264
+            select MPP_ENABLE_MIDDLEWARE_LIB_FFMPEG
+    endmenu
+
     menu "Enable build MPP samples"
 
         menuconfig MPP_ENABLE_USERAPPS_SAMPLES
@@ -543,12 +558,15 @@ menu "MPP Configuration"
                 config MPP_ENABLE_MIDDLEWARE_SAMPLES_RTSP_CLIENT
                     bool "RTSP Client sample"
                     default y
-                config MPP_ENABLE_MIDDLEWARE_SAMPLES_RTSP_PUSHER
-                    bool "RTSP Pusher sample"
-                    default n
                 config MPP_ENABLE_MIDDLEWARE_SAMPLES_RTSP_SERVER
                     bool "RTSP Server sample"
                     default y
+                config MPP_ENABLE_MIDDLEWARE_SAMPLES_RTSP_PUSHER
+                    bool "RTSP Pusher sample"
+                    default n
+                    select MPP_ENABLE_MIDDLEWARE_LIB_X264
+                    select MPP_ENABLE_MIDDLEWARE_LIB_FFMPEG
+                    select MPP_ENABLE_MIDDLEWARE_LIB_RTSP_PUSHER
 
             endif
 
