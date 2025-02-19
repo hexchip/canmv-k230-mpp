@@ -13,8 +13,8 @@ LIBPATH = $(MPP_LIB_PATH)
 LIBS = $(MPP_LIBS)
 
 CC_CFLAGS_EX=-mcmodel=medany -march=rv64imafdcv -mabi=lp64d -Wall -O0 -n --static $(KCFLAGS)
-FFMPEG_DIR = $(MPP_SRC_DIR)/middleware/src/ffmpeg/src/lib_ffmpeg
-X264_DIR = $(MPP_SRC_DIR)/middleware/src/x264/src/lib_x264
+FFMPEG_DIR = $(MPP_SRC_DIR)/middleware/lib/ffmpeg
+X264_DIR = $(MPP_SRC_DIR)/middleware/lib/ffmpeg
 KDMEDIA = $(MPP_SRC_DIR)/middleware/src/kdmedia
 
 

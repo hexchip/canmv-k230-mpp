@@ -12,12 +12,12 @@ LIBS = $(MPP_LIBS)
 LIBS_FOR_CONSOLE_APPLICATION = -lssl -lcrypto
 CC_CFLAGS_EX=-mcmodel=medany -march=rv64imafdcv -mabi=lp64d -Wall -O0 -g -gdwarf-2 -n --static $(KCFLAGS)
 
-FFMPEG_DIR = $(MPP_SRC_DIR)/middleware/src/ffmpeg/src/lib_ffmpeg
-X264_DIR = $(MPP_SRC_DIR)/middleware/src/x264/src/lib_x264
+FFMPEG_DIR = $(MPP_SRC_DIR)/middleware/lib/ffmpeg
+X264_DIR = $(MPP_SRC_DIR)/middleware/lib/x264
 KDMEDIA = $(MPP_SRC_DIR)/middleware/src/kdmedia
 RTSP_PUSHER = $(MPP_SRC_DIR)/middleware/src/rtsp_pusher
 
-LOCAL_LIBS_PATH = -L$(MPP_MIDDLEWARE_LIB_INSTALL_PATH)
+LOCAL_LIBS_PATH = -L$(MPP_MIDDLEWARE_LIB_INSTALL_PATH) -L$(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/x264/lib -L$(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/ffmpeg/lib
 LOCAL_LIBS = -lkdmedia -lrtsp_pusher -lavformat -lavcodec  -lavutil -lswresample -lpostproc -lx264 -lpthread
 
 LOCAL_CFLAGS = -I$(LOCAL_SRC_DIR) -I$(FFMPEG_DIR)/include -I$(KDMEDIA)/include -I$(RTSP_PUSHER)/include
