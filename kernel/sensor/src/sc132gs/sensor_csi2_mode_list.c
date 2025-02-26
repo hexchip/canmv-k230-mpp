@@ -10,7 +10,7 @@ static k_sensor_ae_info sensor_csi2_ae_info[] = {
         .max_gain = 28.547,
         .int_time_delay_frame = 2,
         .gain_delay_frame = 2,
-        .color_type = SENSOR_MONO,
+        .color_type = SENSOR_COLOR,
         .integration_time_increment = 0.000014,
         .gain_increment = SC132GS_MIN_GAIN_STEP,
         .max_integraion_line = 0x486 - 8,
@@ -86,7 +86,7 @@ static const k_sensor_mode sensor_csi2_mode_list[] = {
             .mipi_lanes = 4,
             .data_type = 0x2B,
         },
-        .reg_list = sc132gs_mipi_2lane_1080x1280_init, //sc132gs_mipi_2lane_640x480_init, // sc132gs_mipi_2lane_1080x1280_init, 
+        .reg_list = sc132gs_mipi_2lane_1080x1280_120fps_init,
 #if defined (CONFIG_MPP_ENABLE_SENSOR_SC132GS_ON_CSI2_USE_CHIP_CLK)
         .mclk_setting = {
             {
