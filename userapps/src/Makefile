@@ -1,4 +1,4 @@
-subdirs-y := sensor connector fft cipher pm vg_lite
+subdirs-y := sensor connector fft cipher pm vg_lite uvc
 
 all:
 	@$(foreach dir,$(subdirs-y),make -C $(dir) all || exit $?;)

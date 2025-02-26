@@ -51,6 +51,7 @@ dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_VIRTUAL_VIO) += sample_virtual_vio #
 dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_VO) += sample_vo # compile passed
 dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_WDT) += sample_wdt
 dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_TIGER) += sample_tiger
+dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_UVC) += sample_uvc
 
 # Add directories to the build system
 dirs := $(sort $(dir-y))
