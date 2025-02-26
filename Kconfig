@@ -539,6 +539,10 @@ menu "MPP Configuration"
                     bool "VGLite Sample Tiger"
                     default y
 
+                config MPP_ENABLE_USER_SAMPLES_SAMPLE_UVC
+                    bool "UVC Sample"
+                    default y
+
             endif
 
         menuconfig MPP_ENABLE_MIDDLEWARE_SAMPLES
