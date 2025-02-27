@@ -18,6 +18,7 @@ OBJS = $(patsubst %.c,%.o,$(SRCS))
 all: $(BIN)
 	@-rm -f $(OBJS)
 	echo "${PWD}/Makefile all"
+	cp ./foreman_128x64_3frames.yuv $(MPP_USERAPP_SMAPLE_ELF_DIR)
 
 $(OBJS): %.o : %.c
 	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -c $< -o $@
