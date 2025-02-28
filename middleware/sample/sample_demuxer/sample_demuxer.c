@@ -41,7 +41,26 @@ static void sig_handler(int sig) {
     g_exit = 1;
 }
 
+// 获取文件所在目录的函数
+char* get_file_dir(const char* file_path) {
+    char* last_slash = strrchr(file_path, '/');
+    if (last_slash != NULL) {
+        size_t len = last_slash - file_path + 1;
+        char* dir = (char*)malloc(len + 1);
+        if (dir != NULL) {
+            strncpy(dir, file_path, len);
+            dir[len] = '\0';
+        }
+        return dir;
+    }
+    return "./";
+}
+
 int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <input_mp4_file>\n", argv[0]);
+        return -1;
+    }
 
     signal(SIGINT, sig_handler);
 
@@ -52,7 +71,7 @@ int main(int argc, char *argv[]) {
     k_mp4_config_s mp4_config;
     memset(&mp4_config, 0, sizeof(mp4_config));
     mp4_config.config_type = K_MP4_CONFIG_DEMUXER;
-    strcpy(mp4_config.demuxer_config.file_name, "/sharefs/test.mp4");
+    strcpy(mp4_config.demuxer_config.file_name, argv[1]);
     mp4_config.muxer_config.fmp4_flag = 0;
 
     k_s32 ret = kd_mp4_create(&mp4_demuxer, &mp4_config);
@@ -74,6 +93,9 @@ int main(int argc, char *argv[]) {
     FILE *video_file_fp = NULL;
     FILE *audio_file_fp = NULL;
 
+    // 获取输入文件的目录
+    char* input_dir = get_file_dir(argv[1]);
+
     for (int i = 0; i < file_info.track_num; i++) {
         k_mp4_track_info_s track_info;
         memset(&track_info, 0, sizeof(track_info));
@@ -91,20 +113,28 @@ int main(int argc, char *argv[]) {
             printf("    track_id: %d.\n", track_info.video_info.track_id);
             printf("    width: %d.\n", track_info.video_info.width);
             printf("    height: %d.\n", track_info.video_info.height);
-            if (track_info.video_info.codec_id == K_MP4_CODEC_ID_H264)
-                video_file_fp = fopen("/sharefs/test.264", "wb");
-            else if (track_info.video_info.codec_id == K_MP4_CODEC_ID_H265)
-                video_file_fp = fopen("/sharefs/test.265", "wb");
+            char video_file_path[256];
+            if (track_info.video_info.codec_id == K_MP4_CODEC_ID_H264) {
+                snprintf(video_file_path, sizeof(video_file_path), "%stest.264", input_dir);
+                video_file_fp = fopen(video_file_path, "wb");
+            } else if (track_info.video_info.codec_id == K_MP4_CODEC_ID_H265) {
+                snprintf(video_file_path, sizeof(video_file_path), "%stest.265", input_dir);
+                video_file_fp = fopen(video_file_path, "wb");
+            }
         } else if (track_info.track_type == K_MP4_STREAM_AUDIO) {
             printf("    codec_id: %d.\n", track_info.audio_info.codec_id);
             printf("    track_id: %d.\n", track_info.audio_info.track_id);
             printf("    channels: %d.\n", track_info.audio_info.channels);
             printf("    sample_rate: %d.\n", track_info.audio_info.sample_rate);
             printf("    bit_per_sample: %d.\n", track_info.audio_info.bit_per_sample);
-            if (track_info.audio_info.codec_id == K_MP4_CODEC_ID_G711A)
-                audio_file_fp = fopen("/sharefs/test.g711a", "wb");
-            else if (track_info.audio_info.codec_id == K_MP4_CODEC_ID_G711U)
-                audio_file_fp = fopen("/sharefs/test.g711u", "wb");
+            char audio_file_path[256];
+            if (track_info.audio_info.codec_id == K_MP4_CODEC_ID_G711A) {
+                snprintf(audio_file_path, sizeof(audio_file_path), "%stest.g711a", input_dir);
+                audio_file_fp = fopen(audio_file_path, "wb");
+            } else if (track_info.audio_info.codec_id == K_MP4_CODEC_ID_G711U) {
+                snprintf(audio_file_path, sizeof(audio_file_path), "%stest.g711u", input_dir);
+                audio_file_fp = fopen(audio_file_path, "wb");
+            }
         }
     }
 
@@ -144,6 +174,10 @@ destroy_mp4:
     if (audio_file_fp) {
         fclose(audio_file_fp);
         audio_file_fp = NULL;
+    }
+
+    if (input_dir && strcmp(input_dir, "./")) {
+        free(input_dir);
     }
 
     printf("mp4 demuxer end...\n");

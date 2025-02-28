@@ -567,6 +567,12 @@ int KdMedia::Impl::StartAiAEnc()
         return K_FAILED;
     }
 
+    // enable ans
+    k_ai_vqe_enable vqe_enable;
+    memset(&vqe_enable, 0, sizeof(vqe_enable));
+    vqe_enable.ans_enable = K_TRUE;
+    ret = kd_mpi_ai_set_vqe_attr(ai_dev_, ai_chn_, vqe_enable);
+
     ret = kd_mpi_ai_enable_chn(ai_dev_, ai_chn_);
     kd_sample_aenc_bind_ai(ai_dev_, ai_chn_, aenc_handle_);
 
