@@ -288,8 +288,8 @@ int main(int argc, char *argv[])
         .venc_height = 720,
         .bitrate_kbps = 4000,
 
-        .audio_samplerate = 44100,
-        .audio_channel_cnt = 2,
+        .audio_samplerate = 8000,
+        .audio_channel_cnt = 1,
         .pitch_shift_semitones = 0};
 
     if (argc > 1)

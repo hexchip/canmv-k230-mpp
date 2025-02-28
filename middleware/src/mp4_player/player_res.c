@@ -331,7 +331,7 @@ k_s32 disp_play(k_u8*pdata,k_u32 len,k_u64 timestamp,k_bool end_stream)
     k_u8 *virt_addr;
     k_u32 blk_size;
 
-    blk_size = len;
+    blk_size = STREAM_BUF_SIZE;
 
     while(1)
     {
