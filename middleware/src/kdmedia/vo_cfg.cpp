@@ -223,6 +223,18 @@ void vo_layer_init(k_u32 width,k_u32 height)
         info.act_size.height = width;
         info.func = K_ROTATION_90;
     }
+    else if (g_connector_type == ST7701_V1_MIPI_2LAN_480X800_30FPS)
+    {
+        info.act_size.width = height;
+        info.act_size.height = width;
+        info.func = K_ROTATION_90;
+    }
+    else if (g_connector_type == LT9611_MIPI_4LAN_1920X1080_30FPS)
+    {
+        info.act_size.width = width;
+        info.act_size.height = height;
+        info.func = 0;
+    }
     else
     {
         info.act_size.width = width;

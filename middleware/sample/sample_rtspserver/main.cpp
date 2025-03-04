@@ -79,21 +79,7 @@ class MyRtspServer : public IOnBackChannel, public IOnAEncData, public IOnVEncDa
 
     // IOnBackChannel
     virtual void OnBackChannelData(std::string &session_name, const uint8_t *data, size_t size, uint64_t timestamp) override {
-        if (started_) {
-            //  TODO， need to queue data to handle jitter and control accumulation
-            //   gather data to get complete frame(40ms).
-            if (backchannel_data_size == 0) {
-                timestamp_backchanel = timestamp;
-            }
-            for (size_t i = 0; i < size ;i++) {
-                g711_buffer_backchannel[backchannel_data_size++] = data[i];
-                if (backchannel_data_size == 320) {
-                    media_.SendAudioData(g711_buffer_backchannel, backchannel_data_size, timestamp_backchanel);
-                    backchannel_data_size = 0;
-                    timestamp_backchanel = timestamp;
-                }
-            }
-        }
+        return ;
     }
 
     // IOnAEncData
