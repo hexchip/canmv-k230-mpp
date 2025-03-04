@@ -96,11 +96,6 @@ static k_s32 _sensor_read_chip_id_r(struct sensor_driver_dev *dev, k_u32 *chip_i
         return -1;
     }
 
-    if(-1 != pwd_gpio) {
-        kd_pin_mode(pwd_gpio, GPIO_DM_OUTPUT);
-        kd_pin_write(pwd_gpio, GPIO_PV_HIGH); // Some OV5647 Module PowerDown Pin is AVDD.
-    }
-
     if(0 <= reset_gpio) {
         kd_pin_mode(reset_gpio, GPIO_DM_OUTPUT);
         kd_pin_write(reset_gpio, GPIO_PV_HIGH);
@@ -131,7 +126,7 @@ static int _sensor_power_state_set(struct sensor_driver_dev *dev, k_s32 on, k_u3
 
     if(-1 != pwd_gpio) {
         kd_pin_mode(pwd_gpio, GPIO_DM_OUTPUT);
-        kd_pin_write(pwd_gpio, GPIO_PV_HIGH); // Some OV5647 Module PowerDown Pin is AVDD.
+        kd_pin_write(pwd_gpio, GPIO_PV_LOW);
     }
 
     kd_pin_mode(reset_gpio, GPIO_DM_OUTPUT);
