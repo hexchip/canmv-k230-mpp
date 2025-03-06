@@ -82,6 +82,7 @@ static k_s32 _sensor_read_chip_id_r(struct sensor_driver_dev *dev, k_u32 *chip_i
         kd_pin_mode(reset_gpio, GPIO_DM_OUTPUT);
         kd_pin_write(reset_gpio, GPIO_PV_HIGH);
     }
+    rt_thread_mdelay(1); // wait reset stable.
 
     ret = sensor_reg_read(&dev->i2c_info, XS9950_REG_CHIP_ID, &id_high);
     ret |= sensor_reg_read(&dev->i2c_info, XS9950_REG_CHIP_ID + 1, &id_low);

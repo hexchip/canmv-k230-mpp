@@ -700,7 +700,7 @@ void kd_mpi_connector_parse_setting(k_connector_info *info_list) {
     k_u32 file_data_size = 0;
     struct stat file_stat;
 
-    char line[256];
+    char line[1024];
     char *next_line = NULL;
 
     int data_status = DATA_STAT_INVALID;
