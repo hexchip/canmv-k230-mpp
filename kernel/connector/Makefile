@@ -22,6 +22,7 @@ obj-$(CONFIG_MPP_DSI_ENABLE_LCD_HX8399) += src/hx8399.o
 
 obj-$(CONFIG_MPP_DSI_ENABLE_LCD_ST7701) += src/st7701.o
 obj-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9806) += src/ili9806.o
+obj-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9881) += src/ili9881.o
 
 OBJS = $(obj-y)
 

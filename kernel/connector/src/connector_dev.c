@@ -155,6 +155,11 @@ struct connector_driver_dev* connector_drv_list[] = {
 #ifdef CONFIG_MPP_DSI_ENABLE_LCD_ILI9806
     &ili9806_connector_drv,
 #endif // CONFIG_MPP_DSI_ENABLE_LCD_ILI9806
+
+#ifdef CONFIG_MPP_DSI_ENABLE_LCD_ILI9881
+    &ili9881c_connector_drv,
+#endif // CONFIG_MPP_DSI_ENABLE_LCD_ILI9881
+
     NULL,
 };
 
