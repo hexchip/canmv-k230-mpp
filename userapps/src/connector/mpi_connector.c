@@ -455,14 +455,14 @@ k_s32 kd_mpi_connector_open(const char* connector_name)
 
     if (!connector_name) {
         pr_err("%s, sensor_name is null\n", __func__);
-        return -K_ERR_VO_NULL_PTR;
+        return K_ERR_VO_NULL_PTR;
     }
 
     snprintf(dev_name, sizeof(dev_name), "/dev/connector_%s", connector_name);
     fd = open(dev_name, O_RDWR);
     if (fd < 0) {
         pr_err("%s, failed(%d).\n", __func__, fd);
-        return -K_ERR_VO_NOTREADY;
+        return K_ERR_VO_NOTREADY;
     }
     return fd;
 }

@@ -308,7 +308,7 @@ static const struct sensor_type_name sth_table[] = {
     {__UINT32_MAX__, "UNKNOWN"},
 };
 
-static void sensor_list(k_s32 argc, char** argv)
+static void list_sensor(k_s32 argc, char** argv)
 {
     rt_kprintf("Sensor Type List:\n");
 
@@ -319,6 +319,6 @@ static void sensor_list(k_s32 argc, char** argv)
     return;
 }
 
-MSH_CMD_EXPORT(sensor_list, sensor type list)
+MSH_CMD_EXPORT(list_sensor, list sensor type)
 
 #endif
