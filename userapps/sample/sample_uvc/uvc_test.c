@@ -148,13 +148,23 @@ k_s32 sample_connector_init(k_connector_type type)
     }
 
     // set connect power
-    kd_mpi_connector_power_set(connector_fd, 1);
+    ret = kd_mpi_connector_power_set(connector_fd, 1);
+    if (ret) {
+        goto out;
+    }
     // set connect get id
-    kd_mpi_connector_id_get(connector_fd, &chip_id);
+    ret = kd_mpi_connector_id_get(connector_fd, &chip_id);
+    if (ret) {
+        goto out;
+    }
     // connector init
-    kd_mpi_connector_init(connector_fd, connector_info);
+    ret = kd_mpi_connector_init(connector_fd, connector_info);
+    if (ret) {
+        goto out;
+    }
 
-    return 0;
+out:
+    return ret;
 }
 
 int vo_creat_layer_test(k_vo_layer chn_id, layer_info *info)
@@ -389,8 +399,7 @@ int main(int argc, char **argv)
         ret = uvc_init(&width, &height, is_jpeg);
         if (ret) {
             printf("uvc_init fail\n");
-            kd_mpi_vb_exit();
-            return -1;
+            goto err0;
         }
 
         printf("uvc resolution is (%d X %d)\n", width, height);
@@ -399,12 +408,14 @@ int main(int argc, char **argv)
     /* init for vo part */
     {
         display_hardware_init();
-        sample_connector_init(type);
+        ret = sample_connector_init(type);
+        if (ret) {
+            goto err1;
+        }
 
         vo_poolid = vb_create_vo_pool();
         if (!vo_poolid) {
-            kd_mpi_vb_exit();
-            return -1;
+            goto err1;
         }
 
         info.format = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
@@ -446,8 +457,8 @@ int main(int argc, char **argv)
         vdec_poolid = vb_create_vdec_pool(width, height);
         if (vdec_poolid == VB_INVALID_POOLID) {
             printf("fail to create vdec pool\n");
-            kd_mpi_vb_exit();
-            return -1;
+            ret = -1;
+            goto err2;
         }
 
         attr.pic_width = width;
@@ -461,25 +472,19 @@ int main(int argc, char **argv)
         ret = kd_mpi_vdec_create_chn(ch, &attr);
         if (ret) {
             printf("kd_mpi_vdec_create_chn fail, ret = %d\n", ret);
-            kd_mpi_vb_exit();
-            return ret;
+            goto err3;
         }
 
         ret = kd_mpi_vdec_start_chn(ch);
         if (ret) {
             printf("kd_mpi_vdec_start_chn fail, ret = %d\n", ret);
-            kd_mpi_vdec_destroy_chn(ch);
-            kd_mpi_vb_exit();
-            return ret;
+            goto err4;
         }
 
         ret = sample_vdec_bind_vo(chn_id);
         if (ret) {
             printf("sample_vdec_bind_vo fail, ret = %d\n", ret);
-            kd_mpi_vdec_stop_chn(ch);
-            kd_mpi_vdec_destroy_chn(ch);
-            kd_mpi_vb_exit();
-            return ret;
+            goto err5;
         }
     }
 
@@ -503,7 +508,11 @@ int main(int argc, char **argv)
                 }
             } else {
                 yuyv_to_nv12(frame.userptr, (char *)pic_vaddr, width, height);
-                kd_mpi_vo_chn_insert_frame(chn_id, &vf_info);
+                ret = kd_mpi_vo_chn_insert_frame(chn_id, &vf_info);
+                if (ret) {
+                    printf("kd_mpi_vo_chn_insert_frame fail\n");
+                    break;
+                }
             }
 
             ret = uvc_put_frame(&frame);
@@ -537,5 +546,20 @@ int main(int argc, char **argv)
     kd_mpi_vb_exit();
 
     return 0;
+
+err5:
+    kd_mpi_vdec_stop_chn(ch);
+err4:
+    kd_mpi_vdec_destroy_chn(ch);
+err3:
+    vb_destroy_vdec_pool(vdec_poolid);
+err2:
+    kd_mpi_vb_destory_pool(vo_poolid);
+err1:
+    uvc_exit();
+err0:
+    kd_mpi_vb_exit();
+
+    return ret;
 }
 

@@ -174,3 +174,56 @@ k_s32 connector_device_init(void)
 
     return 0;
 }
+
+#if !defined (CONFIG_SDK_ENABLE_CANMV)
+
+#define CONNECTOR_TYPE_NAME(x) { .type = x, .name = #x }
+
+struct connector_type_name {
+    k_connector_type type;
+    const char *name;
+};
+
+static const struct connector_type_name cth_table[] = {
+    CONNECTOR_TYPE_NAME(HX8377_V2_MIPI_4LAN_1080X1920_30FPS),
+    CONNECTOR_TYPE_NAME(ILI9806_MIPI_2LAN_480X800_30FPS),
+    CONNECTOR_TYPE_NAME(ILI9881_MIPI_4LAN_800X1280_60FPS),
+
+    CONNECTOR_TYPE_NAME(ST7701_V1_MIPI_2LAN_480X800_30FPS),
+    CONNECTOR_TYPE_NAME(ST7701_V1_MIPI_2LAN_480X854_30FPS),
+    CONNECTOR_TYPE_NAME(ST7701_V1_MIPI_2LAN_480X640_30FPS),
+    CONNECTOR_TYPE_NAME(ST7701_V1_MIPI_2LAN_368X544_60FPS),
+
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_ADAPT_RESOLUTION),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1920X1080_30FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1920X1080_60FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1920X1080_50FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1920X1080_25FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1920X1080_24FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1280X720_60FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1280X720_50FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_1280X720_30FPS),
+    CONNECTOR_TYPE_NAME(LT9611_MIPI_4LAN_640X480_60FPS),
+
+    CONNECTOR_TYPE_NAME(VIRTUAL_DISPLAY_DEVICE),
+#if defined (CONFIG_MPP_ENABLE_DSI_DEBUGGER)
+    CONNECTOR_TYPE_NAME(DSI_DEBUGGER_DEVICE),
+#endif
+    /* last type set to U32 MAX */
+    {__UINT32_MAX__, "UNKNOWN"},
+};
+
+static void list_connector(k_s32 argc, char** argv)
+{
+    rt_kprintf("Connector Type List:\n");
+
+    for(size_t i = 0; i < sizeof(cth_table) / sizeof(cth_table[0]); i++) {
+        rt_kprintf("%17d -> %s\n", cth_table[i].type, cth_table[i].name);
+    }
+
+    return;
+}
+
+MSH_CMD_EXPORT(list_connector, list connector type)
+
+#endif
