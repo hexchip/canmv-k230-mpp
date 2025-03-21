@@ -25,7 +25,7 @@ k_connector_info connector_info_list[] = {
         "hx8399",
         0,
         0,
-        BACKGROUND_PINK_COLOR,
+        BACKGROUND_BLACK_COLOR,
         10,
         3,
         1,
