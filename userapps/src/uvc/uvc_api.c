@@ -49,6 +49,8 @@ int uvc_init(int *width, int *height, unsigned char is_jpeg)
     struct uvc_format format;
     struct uvc_requestbuffers requset_buf;
     struct uvc_frame uvc_frame;
+    struct uvc_framedesc frame_desc;
+    struct uvc_fpsdesc fps_desc;
     char *frame_buf[BUF_CNT];
 
     uvc_dev.fd = -1;
@@ -69,6 +71,27 @@ int uvc_init(int *width, int *height, unsigned char is_jpeg)
 #if UVC_DEBUG
         printf("fmt type is %d -> (%s)\n", fmt_desc.format_type, fmt_desc.description);
 #endif
+        frame_desc.format_type = fmt_desc.format_type;
+        frame_desc.index = 0;
+        while (ioctl(fd, VIDIOC_ENUM_FRAME, &frame_desc) == 0) {
+#if UVC_DEBUG
+            printf("wWidth: %4d, wHeight: %4d, DefaultFrameInterval: %d\n",
+                   frame_desc.width, frame_desc.height, frame_desc.defaultframeinterval);
+#endif
+
+            fps_desc.format_type = fmt_desc.format_type;
+            fps_desc.width = frame_desc.width;
+            fps_desc.height = frame_desc.height;
+            fps_desc.index = 0;
+            while (ioctl(fd, VIDIOC_ENUM_INTERVAL, &fps_desc) == 0) {
+#if UVC_DEBUG
+                printf("FrameInterval[%d]: %d\n", fps_desc.index, fps_desc.frameinterval);
+#endif
+                fps_desc.index ++;
+            }
+            frame_desc.index ++;
+        }
+
         if (fmt_desc.format_type == is_jpeg)
             found = true;
         fmt_desc.index ++;
@@ -83,6 +106,9 @@ int uvc_init(int *width, int *height, unsigned char is_jpeg)
     format.format_type = is_jpeg;
     format.width = *width;
     format.height = *height;
+    /* we may set the frame interval which device support,but we intentionally
+     * set a wrong value, then it will use default frame interval in current resolution */
+    format.frameinterval = 0;
 
 #if UVC_DEBUG
     printf("expect resolution: %d X %d\n", *width, *height);

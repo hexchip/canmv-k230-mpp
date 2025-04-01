@@ -53,10 +53,27 @@ struct uvc_format {
     unsigned int width;
     unsigned int height;
     unsigned char format_type;
+    unsigned int frameinterval;
 };
 
 struct uvc_requestbuffers {
     unsigned int count;
+};
+
+struct uvc_framedesc {
+    unsigned int index;
+    unsigned char format_type;
+    unsigned int width;
+    unsigned int height;
+    unsigned int defaultframeinterval;
+};
+
+struct uvc_fpsdesc {
+    unsigned int index;
+    unsigned char format_type;
+    unsigned int width;
+    unsigned int height;
+    unsigned int frameinterval;
 };
 
 struct dfs_mmap2_args
@@ -70,15 +87,17 @@ struct dfs_mmap2_args
     void *ret;
 };
 
-#define VIDIOC_ENUM_FMT     _IOWR('V', 1, struct uvc_fmtdesc)
-#define VIDIOC_S_FMT        _IOWR('V', 2, struct uvc_format)
-#define VIDIOC_REQBUFS      _IOWR('V', 3, struct uvc_requestbuffers)
-#define VIDIOC_QUERYBUF     _IOWR('V',  4, struct uvc_frame)
-#define VIDIOC_QBUF         _IOWR('V', 5, struct uvc_frame)
-#define VIDIOC_DQBUF        _IOWR('V', 6, struct uvc_frame)
-#define VIDIOC_BUFMMAP      _IOW('V', 7, struct dfs_mmap2_args)
-#define VIDIOC_STREAMON     _IOW('V', 8, int)
-#define VIDIOC_STREAMOFF    _IOW('V', 9, int)
+#define VIDIOC_ENUM_FMT         _IOWR('V', 1, struct uvc_fmtdesc)
+#define VIDIOC_S_FMT            _IOWR('V', 2, struct uvc_format)
+#define VIDIOC_REQBUFS          _IOWR('V', 3, struct uvc_requestbuffers)
+#define VIDIOC_QUERYBUF         _IOWR('V',  4, struct uvc_frame)
+#define VIDIOC_QBUF             _IOWR('V', 5, struct uvc_frame)
+#define VIDIOC_DQBUF            _IOWR('V', 6, struct uvc_frame)
+#define VIDIOC_BUFMMAP          _IOW('V', 7, struct dfs_mmap2_args)
+#define VIDIOC_STREAMON         _IOW('V', 8, int)
+#define VIDIOC_STREAMOFF        _IOW('V', 9, int)
+#define VIDIOC_ENUM_FRAME       _IOWR('V', 10, struct uvc_framedesc)
+#define VIDIOC_ENUM_INTERVAL    _IOWR('V', 11, struct uvc_fpsdesc)
 
 #ifdef __cplusplus
 }
