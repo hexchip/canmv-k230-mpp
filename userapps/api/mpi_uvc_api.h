@@ -57,6 +57,7 @@ int uvc_init(int *width, int *height, unsigned char is_jpeg);
 int uvc_get_frame(struct uvc_frame *frame);
 int uvc_put_frame(struct uvc_frame *frame);
 void uvc_exit();
+int uvc_get_devinfo(char *info, int len);
 
 #ifdef __cplusplus
 }

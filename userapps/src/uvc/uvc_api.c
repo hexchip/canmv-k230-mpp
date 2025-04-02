@@ -230,3 +230,43 @@ int uvc_put_frame(struct uvc_frame *frame)
     return ret;
 }
 
+int uvc_get_devinfo(char *info, int len)
+{
+    int ret = 0;
+    int fd = uvc_dev.fd;
+    struct usb_string str_manufacturer;
+    struct usb_string str_product;
+    struct usb_index usb_index;
+    int need_len = 0;
+
+    if ((ret = ioctl(fd, VIDIOC_GET_INDEX, &usb_index))) {
+        printf("VIDIOC_GET_INDEX fail: %s (errno: %d)\n", strerror(errno), errno);
+        goto out;
+    }
+
+    str_manufacturer.index = usb_index.iManufacturer;
+    if ((ret = ioctl(fd, VIDIOC_GET_STRING, &str_manufacturer))) {
+        printf("get iManufacturer fail: %s (errno: %d)\n", strerror(errno), errno);
+        goto out;
+    }
+    need_len += strlen(str_manufacturer.str);
+
+    str_product.index = usb_index.iProduct;
+    if ((ret = ioctl(fd, VIDIOC_GET_STRING, &str_product))) {
+        printf("get iManufacturer fail: %s (errno: %d)\n", strerror(errno), errno);
+        goto out;
+    }
+
+    need_len += strlen(str_product.str);
+    need_len += 2;
+
+    if (len < need_len) {
+        ret = -1;
+        goto out;
+    }
+
+    snprintf(info, len, "%s %s", str_manufacturer.str, str_product.str);
+
+out:
+    return ret;
+}
