@@ -33,8 +33,7 @@ extern "C" {
 #endif /* End of #ifdef __cplusplus */
 
 #define UVC_DEBUG (0)
-#define USBH_VIDEO_FORMAT_UNCOMPRESSED 0
-#define USBH_VIDEO_FORMAT_MJPEG        1
+
 #define BUF_CNT (4)
 #define MAX_USB_STRING_LEN (64)
 
@@ -48,13 +47,6 @@ struct uvc_fmtdesc {
     unsigned int index;
     unsigned char format_type;
     unsigned char description[32];
-};
-
-struct uvc_format {
-    unsigned int width;
-    unsigned int height;
-    unsigned char format_type;
-    unsigned int frameinterval;
 };
 
 struct uvc_requestbuffers {

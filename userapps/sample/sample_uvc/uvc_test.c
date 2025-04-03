@@ -396,9 +396,17 @@ int main(int argc, char **argv)
 
     /* init for uvc part */
     {
-        ret = uvc_init(&width, &height, is_jpeg);
+        struct uvc_format format = {width, height, is_jpeg, 0};
+
+        ret = uvc_init(&format);
         if (ret) {
             printf("uvc_init fail\n");
+            goto err0;
+        }
+
+        ret = uvc_start_stream();
+        if (ret) {
+            printf("uvc start stream fail\n");
             goto err0;
         }
 
@@ -494,7 +502,7 @@ int main(int argc, char **argv)
         while (1) {
             struct uvc_frame frame;
 
-            ret = uvc_get_frame(&frame);
+            ret = uvc_get_frame(&frame, 1000);
             if (ret) {
                 printf("uvc_get_frame fail\n");
                 break;

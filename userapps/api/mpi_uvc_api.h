@@ -41,6 +41,11 @@
 extern "C" {
 #endif /* End of #ifdef __cplusplus */
 
+#define INVALID_FRAME_INDEX (0xffffffff)
+
+#define USBH_VIDEO_FORMAT_UNCOMPRESSED 0
+#define USBH_VIDEO_FORMAT_MJPEG        1
+
 struct uvc_frame {
     unsigned int index;
     unsigned int reserve_1;
@@ -53,11 +58,22 @@ struct uvc_frame {
     };
 };
 
-int uvc_init(int *width, int *height, unsigned char is_jpeg);
-int uvc_get_frame(struct uvc_frame *frame);
+struct uvc_format {
+    unsigned int width;
+    unsigned int height;
+    unsigned char format_type;
+    unsigned int frameinterval;
+};
+
+int uvc_init(struct uvc_format *fmt);
+int uvc_start_stream(void);
+int uvc_get_frame(struct uvc_frame *frame, unsigned int timeout_ms);
 int uvc_put_frame(struct uvc_frame *frame);
 void uvc_exit();
+
 int uvc_get_devinfo(char *info, int len);
+int uvc_get_formats(struct uvc_format **fmts);
+void uvc_free_formats(struct uvc_format **fmts);
 
 #ifdef __cplusplus
 }
