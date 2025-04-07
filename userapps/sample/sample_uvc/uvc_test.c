@@ -502,7 +502,7 @@ int main(int argc, char **argv)
         while (1) {
             struct uvc_frame frame;
 
-            ret = uvc_get_frame(&frame, 1000);
+            ret = uvc_get_frame(&frame, 5000);
             if (ret) {
                 printf("uvc_get_frame fail\n");
                 break;
