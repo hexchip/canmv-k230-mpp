@@ -410,6 +410,8 @@ int main(int argc, char **argv)
             goto err0;
         }
 
+        width = format.width;
+        height = format.height;
         printf("uvc resolution is (%d X %d)\n", width, height);
     }
 
