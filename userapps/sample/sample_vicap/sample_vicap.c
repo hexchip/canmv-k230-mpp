@@ -55,7 +55,7 @@
 
 extern k_vo_display_resolution hx8399[20];
 
-#define VICAP_OUTPUT_BUF_NUM 3//3
+#define VICAP_OUTPUT_BUF_NUM 5//3
 #define VICAP_INPUT_BUF_NUM 3
 #define GDMA_BUF_NUM 3
 
@@ -763,21 +763,16 @@ chn_parse:
                 else if (strcmp(argv[i], "-sensor") == 0)
                 {
                     if ((i + 1) >= argc) {
-                        printf("sensor parameters missing, you can use `sensor_list` command to find sensor type.\n");
+                        printf("sensor parameters missing.\n");
                         return -1;
                     }
                     k_u16 sensor = atoi(argv[i + 1]);
-                    switch (sensor) {
-                        case 0 ... SENSOR_TYPE_MAX:
-                        {
-                            device_obj[cur_dev].sensor_type = sensor;
-                            break;
-                        }
-                        default:
-                        {
-                            printf("unsupport sensor type.\n");
-                            return -1;
-                        }
+
+                    device_obj[cur_dev].sensor_type = (k_vicap_sensor_type)sensor;                   
+                    if(sensor >=SENSOR_TYPE_MAX)
+                    {
+                        printf("unsupport sensor type.\n");
+                        return -1;
                     }
                 }
                 else if (strcmp(argv[i], "-itype") == 0)

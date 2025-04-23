@@ -34,9 +34,6 @@ DATA_FILES := $(wildcard $(SRC_PATH)/presets/*.ffpreset) $(SRC_PATH)/doc/ffprobe
 
 SKIPHEADERS = compat/w32pthreads.h
 
-DEST_DIR = $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)
-INSTALL_INCLUDE_DIR = $(SRC_PATH)/_include
-
 # first so "all" becomes default target
 all: all-yes
 

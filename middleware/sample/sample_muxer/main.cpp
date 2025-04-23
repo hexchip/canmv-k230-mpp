@@ -105,7 +105,7 @@ public:
         }
     }
 
-    int Init(KdMediaInputConfig &config)
+    int Init(const KdMediaInputConfig &config)
     {
         if (0 != media_.DetectSensor(&config.sensor_type))
         {
@@ -157,7 +157,7 @@ public:
     }
 
 protected:
-    int mp4_muxer_init(KdMediaInputConfig &config)
+    int mp4_muxer_init(const KdMediaInputConfig &config)
     {
         printf("mp4 config audio channel:%d,samplerate:%d\n",config.audio_channel_cnt,config.audio_samplerate);
 
@@ -271,7 +271,9 @@ private:
 
 static void show_usage(char* pname)
 {
-    printf("Usage: ./%s -o *.mp4\n",pname);
+    printf("Usage: ./%s -o *.mp4  -s 7\n",pname);
+    printf("-s: the sensor type: default 7\n");
+    printf("     see camera sensor doc.\n");
     printf("-o: save mp4 path file name\n");
 }
 
@@ -288,14 +290,18 @@ int main(int argc, char *argv[])
         .venc_height = 720,
         .bitrate_kbps = 4000,
 
-        .audio_samplerate = 8000,
-        .audio_channel_cnt = 1,
+        .audio_samplerate = 44100,
+        .audio_channel_cnt = 2,
         .pitch_shift_semitones = 0};
 
     if (argc > 1)
     {
         for (int i = 1; i < argc; i += 2)
         {
+            if (strcmp(argv[i], "-s") == 0)
+            {
+                config.sensor_type = (k_vicap_sensor_type)atoi(argv[i + 1]);
+            }
             if (strcmp(argv[i], "-o") == 0)
             {
                 memset(g_mp4_pathname,0,sizeof(g_mp4_pathname));

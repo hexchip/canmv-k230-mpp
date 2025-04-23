@@ -926,12 +926,15 @@ k_s32 sample_venc_osd_border_h265(k_vicap_sensor_type sensor_type)
 
 void sample_venc_usage(char *sPrgNm)
 {
-    printf("Usage : %s [index] -o [filename]\n", sPrgNm);
+    printf("Usage : %s [index] -sensor [sensor_index] -o [filename]\n", sPrgNm);
     printf("index:\n");
     printf("\t  0) H.265e.\n");
     printf("\t  1) JPEG encode.\n");
     printf("\t  2) OSD + H.264e.\n");
     printf("\t  3) OSD + Border + H.265e.\n");
+    printf("\n");
+    printf("sensor_index:\n");
+    printf("\t  see vicap doc\n");
     return;
 }
 
@@ -983,7 +986,11 @@ int main(int argc, char *argv[])
     case_index = atoi(argv[1]);
     for (int i = 2; i < argc; i++)
     {
-        if (strcmp(argv[i], "-o") == 0)
+        if (strcmp(argv[i], "-sensor") == 0)
+        {
+            sensor_type = (k_vicap_sensor_type)atoi(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "-o") == 0)
         {
             strcpy(out_filename, argv[i + 1]);
             if ((output_file = fopen(out_filename, "wb")) == NULL)

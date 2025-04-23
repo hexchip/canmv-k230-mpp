@@ -1,13 +1,7 @@
-include ../../mkenv.mk
-
 include $(MPP_SRC_DIR)/middleware/mpp.mk
 include $(MPP_SRC_DIR)/middleware/rt-smart.mk
-
-CURRECT_DIR_NAME=$(shell basename `pwd`)
-LOCAL_SRC_DIR = $(shell pwd)
-
 SRCPATH=.
-prefix=$(MPP_SRC_DIR)/middleware/lib/$(CURRECT_DIR_NAME)
+prefix=$(MPP_SRC_DIR)/middleware/src/x264/src/lib_x264
 exec_prefix=${prefix}
 bindir=${exec_prefix}/bin
 libdir=${exec_prefix}/lib
@@ -22,7 +16,7 @@ DEPMM=-MM -g0
 DEPMT=-MT
 LD=riscv64-unknown-linux-musl-gcc -o
 LDFLAGS= $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static -lm -lpthread -ldl
-LIBX264=lib$(CURRECT_DIR_NAME).a
+LIBX264=libx264.a
 AR=riscv64-unknown-linux-musl-ar rc
 RANLIB=riscv64-unknown-linux-musl-ranlib
 STRIP=strip

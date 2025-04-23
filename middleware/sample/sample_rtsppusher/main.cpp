@@ -22,7 +22,9 @@ static void sigHandler(int sig_no) {
 }
 
 static void Usage() {
-    std::cout << "Usage: ./sample_rtsppusher.elf [-w <width>] [-h <height>] [-b <bitrate_kbps>] [-o <rtspurl>]" << std::endl;
+    std::cout << "Usage: ./sample_rtsppusher.elf [-s <sensor_type>] [-w <width>] [-h <height>] [-b <bitrate_kbps>] [-o <rtspurl>]" << std::endl;
+    std::cout << "-s: the sensor type, default 7 :" << std::endl;
+    std::cout << "       see camera sensor doc." << std::endl;
     std::cout << "-w: the video encoder width, default 1280" << std::endl;
     std::cout << "-h: the video encoder height, default 720" << std::endl;
     std::cout << "-b: the video encoder bitrate(kbps), default 2000" << std::endl;
@@ -32,10 +34,17 @@ static void Usage() {
 int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
     int result;
     opterr = 0;
-    while ((result = getopt(argc, argv, "Hw:h:b:o:")) != -1) {
+    while ((result = getopt(argc, argv, "Hs:w:h:b:o:")) != -1) {
         switch(result) {
         case 'H' : {
             Usage(); break;
+        }
+        case 's' : {
+            int n = atoi(optarg);
+            if (n < 0 || n > 27) Usage();
+            config.sensor_type = (k_vicap_sensor_type)n;
+            config.video_valid = true;
+            break;
         }
         case 'w': {
             int n = atoi(optarg);
@@ -65,7 +74,6 @@ int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
         default: Usage(); break;
         }
     }
-    config.video_valid = true;
     if (config.video_valid) {
         // validate the parameters... TODO
         std::cout << "Validate the input config, not implemented yet, TODO." << std::endl;
@@ -116,7 +124,7 @@ class MyRtspServer : public IOnAEncData, public IOnVEncData {
         }
     }
 
-    int Init(KdMediaInputConfig &config) {
+    int Init(const KdMediaInputConfig &config) {
 
         if (0 != media_.DetectSensor(&config.sensor_type))
         {

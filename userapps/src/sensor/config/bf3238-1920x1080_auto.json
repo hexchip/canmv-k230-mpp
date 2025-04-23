@@ -5,7 +5,7 @@
       "enable": true,
       "semMode": 0,
       "antiFlikerMode": 1,
-      "setPoint": 50,
+      "setPoint": 70,
       "tolerance": 10,
       "dampOver": 0.3,
       "dampOverGain": 4.0,

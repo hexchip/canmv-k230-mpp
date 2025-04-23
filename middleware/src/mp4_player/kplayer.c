@@ -9,8 +9,6 @@
 #include <signal.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <sys/time.h>
-#include <time.h>
 
 #include "kplayer.h"
 #include "player_res.h"
@@ -209,16 +207,11 @@ static void *play_thread(void *arg)
 {
     k_s32 ret;
     k_mp4_frame_data_s frame_data;
-    // 记录第一帧的时间戳，初始化为 -1 表示还未获取到
-    k_s64 first_frame_timestamp = -1;
-    // 记录第一帧的系统时间，初始化为 0
-    k_s64 first_sys_time = 0;
-
     while (g_play_start)
     {
         if (g_play_pause)
         {
-            usleep(100 * 1000);
+            usleep(100*1000);
             continue;
         }
         memset(&frame_data, 0, sizeof(frame_data));
@@ -239,42 +232,17 @@ static void *play_thread(void *arg)
         {
             if (g_video_track != INVALID_STREAM_TRACK)
             {
+// printf("video data size:%d\n",frame_data.data_length);
+#if 0
+                printf("video data size:%d,data:0x%x_0x%x_0x%x_0x%x_0x%x_0x%x_0x%x_0x%x_0x%x_0x%x\n",\
+                frame_data.data_length,frame_data.data[0],frame_data.data[1],frame_data.data[2],frame_data.data[3],frame_data.data[4],
+                frame_data.data[5],frame_data.data[6],frame_data.data[7],frame_data.data[8],frame_data.data[9]);
+#endif
                 if (frame_data.data_length != 0)
                 {
-                    if (g_audio_track == INVALID_STREAM_TRACK)
-                    {
-                        // 计算当前系统时间
-                        struct timespec current_time;
-                        clock_gettime(CLOCK_MONOTONIC, &current_time);
-                        k_s64 current_sys_time = current_time.tv_sec * 1000 + current_time.tv_nsec / 1000000;
-
-                        // 如果是第一帧，记录第一帧的时间戳和系统时间
-                        if (first_frame_timestamp == -1)
-                        {
-                            first_frame_timestamp = frame_data.time_stamp;
-                            first_sys_time = current_sys_time;
-                        }
-                        else
-                        {
-                            // 计算当前（系统时间 - demux 第一帧的系统时间差）
-                            k_s64 sys_time_diff = current_sys_time - first_sys_time;
-                            // 计算（当前帧的时间戳 - 第一帧时间戳差值）
-                            k_s64 frame_time_diff = frame_data.time_stamp - first_frame_timestamp;
-
-                            // 休眠
-                            k_s64 sleep_time = frame_time_diff - sys_time_diff;
-                            if (sleep_time > 0) {
-                                struct timespec req = {
-                                .tv_sec = sleep_time / 1000,
-                                .tv_nsec = (sleep_time % 1000) * 1000000
-                                };
-                                nanosleep(&req, NULL);
-                            }
-                        }
-                    }
-
                     disp_play(frame_data.data, frame_data.data_length, frame_data.time_stamp, K_FALSE);
                     g_progress_info.cur_time = frame_data.time_stamp;
+                    //printf("video data size:%d,timestamp:%d\n", frame_data.data_length,frame_data.time_stamp);
                     if (g_pfnCallback != NULL)
                     {
                         g_pfnCallback(K_PLAYER_EVENT_PROGRESS, &g_progress_info);
@@ -286,15 +254,22 @@ static void *play_thread(void *arg)
         {
             if (g_audio_track != INVALID_STREAM_TRACK)
             {
-                ao_play(frame_data.data, frame_data.data_length, frame_data.time_stamp);
+                //printf("audio data size:%d,timestamp:%d\n", frame_data.data_length,frame_data.time_stamp);
+                ao_play(frame_data.data,frame_data.data_length,frame_data.time_stamp);
             }
         }
     }
 
-    // send over frame
+    //send over frame
     if (g_video_track != INVALID_STREAM_TRACK)
     {
-        disp_play(NULL, 0, 0, K_TRUE);
+        char end_frame[100] = {0};
+        end_frame[0] = 0x0;
+        end_frame[1] = 0x0;
+        end_frame[2] = 0x0;
+        end_frame[3] = 0x1;
+        end_frame[4] = 0x41;
+        disp_play((k_u8*)end_frame, 100, 0, K_TRUE);
     }
 
     ret = kd_mp4_destroy(g_mp4_demuxer_handle);

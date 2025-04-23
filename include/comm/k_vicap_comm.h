@@ -442,6 +442,7 @@ typedef struct {
     k_u32 buffer_num;
     k_u32 buffer_size;
     k_vicap_mirror mirror;
+    k_bool fastboot_enable;
 } k_vicap_dev_attr;
 
 /**

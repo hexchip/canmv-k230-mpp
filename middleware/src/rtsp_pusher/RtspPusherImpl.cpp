@@ -42,7 +42,6 @@ RTSPPusherImpl::RTSPPusherImpl()
 	m_nVideoWidth = 0;
 	m_nVideoHeight = 0;
 	m_nfps = 25;
-	m_start_reconnect = false;
 }
 int RTSPPusherImpl::init(const char* rtspurl, int video_width, int video_height)
 {
@@ -54,9 +53,16 @@ int RTSPPusherImpl::init(const char* rtspurl, int video_width, int video_height)
 
 	sem_init(&m_sConnect, NULL, NULL);
 	pthread_mutex_init(&m_Lock, NULL);
-	m_start_reconnect = true;
 	pthread_create(&m_hConnectThread, NULL, ReconnectThread, this);
 
+	return 0;
+}
+
+int  RTSPPusherImpl::_reInit()
+{
+	sem_init(&m_sConnect, NULL, NULL);
+	pthread_mutex_init(&m_Lock, NULL);
+	pthread_create(&m_hConnectThread, NULL, ReconnectThread, this);
 	return 0;
 }
 
@@ -69,16 +75,14 @@ int RTSPPusherImpl::open()
 	int  nRet = _openVideoOutput();
 	if (0 != nRet)
 	{
-		//assert(false);
-		printf("open video output failed\n");
+		assert(false);
 		return -1;
 	}
 	nRet = _OpenRtspStreams();
 	if (0 != nRet)
 	{
-		printf("open rtsp streams failed\n");
-		//assert(false);
-		return -1;
+		assert(false);
+		return false;
 	}
 	printf("rtsp pusher init success, url: %s\n", m_sUrl);
 	m_bInited = true;
@@ -101,18 +105,11 @@ int RTSPPusherImpl::_openVideoOutput()
 	// Video encoder setup
 	AVCodec* videoCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
 	if (!videoCodec)
-	{
-		printf("=========avcodec_find_encoder failed\n");
 		return -1;
-	}
-
 
 	videoCodecContext = avcodec_alloc_context3(videoCodec);
 	if (!videoCodecContext)
-	{
-		printf("=========avcodec_alloc_context3 failed\n");
 		return -1;
-	}
 
 	// Set video codec parameters
 	videoCodecContext->width = m_nVideoWidth;
@@ -148,15 +145,14 @@ int RTSPPusherImpl::_openVideoOutput()
 		// Handle error - could not open video codec
 		char log[256];
 		av_strerror(nRet, log, 256);
-		printf("=========avcodec_open2 failed, %s\n", log);
 		return -1;
 	}
 
-	// {
-	// 	//memcpy(videoCodecContext->extradata, m_pSPSPPS, m_nSPSPPSLen);
-	// 	videoCodecContext->extradata = (uint8_t*)m_pSPSPPS;
-	// 	videoCodecContext->extradata_size = m_nSPSPPSLen;
-	// }
+	{
+		//memcpy(videoCodecContext->extradata, m_pSPSPPS, m_nSPSPPSLen);
+		videoCodecContext->extradata = (uint8_t*)m_pSPSPPS;
+		videoCodecContext->extradata_size = m_nSPSPPSLen;
+	}
 
 	if (videoCodecContext->extradata)
 		printf("url: %s pusher extradata: %p, size: %d\n", m_sUrl, videoCodecContext->extradata, videoCodecContext->extradata_size);
@@ -196,9 +192,8 @@ int RTSPPusherImpl::_OpenRtspStreams()
 	} while (0);
 	if (nRet != 0)
 	{
-		// assert(false);
-		//_CloseRtspPusher();
-		sem_post(&m_sConnect);
+		assert(false);
+		_CloseRtspPusher();
 	}
 	return nRet;
 }
@@ -207,22 +202,20 @@ int RTSPPusherImpl::_ConnectRtspServer()
 {
 	assert(NULL != outputContext);
 
-	// while (m_start_reconnect)
-	// {
-	// 	int nRet = avformat_write_header(outputContext, nullptr);
-	// 	if (nRet < 0)
-	// 	{
-	// 		printf("avformat_write_header failed, Ret: %d, url: %s\n", nRet, m_sUrl);
-	// 		sleep(1);
-	// 		continue;
-	// 	}
-	// 	break;
-	// }
+	while (true)
+	{
+		int nRet = avformat_write_header(outputContext, nullptr);
+		if (nRet < 0)
+		{
+			printf("avformat_write_header failed, Ret: %d, url: %s\n", nRet, m_sUrl);
+			sleep(1);
+			continue;
+		}
+		break;
+	}
 
 
-	//return 0;
-
-	return avformat_write_header(outputContext, nullptr);
+	return 0;
 }
 
 void RTSPPusherImpl::_CloseRtspStreams()
@@ -240,7 +233,7 @@ void RTSPPusherImpl::setSPSPPS(char* pSPSBuf, int nSPSLen, char* pPPSBuf, int nP
 	memcpy(m_pSPSPPS, pSPSBuf, nSPSLen);
 	memcpy(m_pSPSPPS + nSPSLen, pPPSBuf, nPPSLen);
 
-	//sem_post(&m_sConnect);
+	sem_post(&m_sConnect);
 
 	return;
 }
@@ -250,7 +243,7 @@ void RTSPPusherImpl::setSPSPPS_EX(char* pSPSPPSBuf,int nLen)
 	m_nSPSPPSLen = nLen;
 	memcpy(m_pSPSPPS, pSPSPPSBuf, nLen);
 
-	//sem_post(&m_sConnect);
+	sem_post(&m_sConnect);
 }
 
 int RTSPPusherImpl::pushVideo(char* pBuf, int nLen, bool bKey, unsigned long long nTimeStamp)
@@ -260,8 +253,6 @@ int RTSPPusherImpl::pushVideo(char* pBuf, int nLen, bool bKey, unsigned long lon
 
 	if (m_bNeedIframe && !bKey)
 		return 0;
-	else
-		m_bNeedIframe = false;
 
 	if (m_lVTimeStamp == 0)
 		m_lVTimeStamp = nTimeStamp;
@@ -290,6 +281,7 @@ int RTSPPusherImpl::pushVideo(char* pBuf, int nLen, bool bKey, unsigned long lon
 	pthread_mutex_lock(&m_Lock);
 	int nRet = av_interleaved_write_frame(outputContext, &packet);
 	pthread_mutex_unlock(&m_Lock);
+	m_bNeedIframe = false;
 
 	av_packet_unref(&packet);
 	if (nRet < 0)
@@ -303,7 +295,7 @@ int RTSPPusherImpl::pushVideo(char* pBuf, int nLen, bool bKey, unsigned long lon
 		{
 			printf("reconnet server:%s\n",m_sUrl);
 			close();
-			sem_post(&m_sConnect);
+			_reInit();
 		}
 	}
 	else
@@ -331,12 +323,6 @@ void RTSPPusherImpl::close()
 		// Free the output context and associated resources
 		avformat_free_context(outputContext);
 		outputContext = NULL;
-
-		if (videoCodecContext != NULL)
-		{
-			avcodec_free_context(&videoCodecContext);
-			videoCodecContext = NULL;
-		}
 	}
 	pthread_mutex_unlock(&m_Lock);
 }
@@ -344,13 +330,6 @@ void RTSPPusherImpl::close()
 RTSPPusherImpl::~RTSPPusherImpl()
 {
 	close();
-	m_start_reconnect = false;
-	sem_post(&m_sConnect);
-	pthread_join(m_hConnectThread, NULL);
-	m_hConnectThread = NULL;
-
-	sem_destroy(&m_sConnect);
-	pthread_mutex_destroy(&m_Lock);
 }
 
 void RTSPPusherImpl::_CloseRtspPusher()
@@ -359,12 +338,6 @@ void RTSPPusherImpl::_CloseRtspPusher()
 	{
 		avformat_free_context(outputContext);
 		outputContext = nullptr;
-	}
-
-	if (videoCodecContext != NULL)
-	{
-		avcodec_free_context(&videoCodecContext);
-		videoCodecContext = NULL;
 	}
 
 }
@@ -376,23 +349,11 @@ void* RTSPPusherImpl::ReconnectThread(void* pParam)
 }
 void RTSPPusherImpl::_DoReconnect()
 {
-	while (m_start_reconnect)
+	while (true)
 	{
 		sem_wait(&m_sConnect);
-		if (!m_start_reconnect)
-		{
-			return;
-		}
 
-		printf("rtsp pusher reconnecting, url: %s\n", m_sUrl);
 		close();
-		if (0 != open())
-		{
-			sleep(5);
-		}
-		else
-		{
-			printf("rtsp pusher reconnect success, url: %s\n", m_sUrl);
-		}
+		_reInit();
 	}
 }

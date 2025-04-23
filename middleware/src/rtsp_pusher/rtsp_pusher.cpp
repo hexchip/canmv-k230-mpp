@@ -67,16 +67,15 @@ int KdRtspPusher::Impl::Init(const RtspPusherInitParam &param) {
 
 void KdRtspPusher::Impl::DeInit() {
     _deinit_frame_free_queue();
-
     return ;
 }
 
 int KdRtspPusher::Impl::Open() {
-  rtsp_pusher_.open();
+
   bStartPushFrame_ = true;
   pthread_create(&hpushFrameThread_, NULL, push_data_thread, this);
 
-  return 0;
+  return rtsp_pusher_.open();
 }
 
 void KdRtspPusher::Impl::Close() {
@@ -90,11 +89,6 @@ void KdRtspPusher::Impl::Close() {
 }
 
 int KdRtspPusher::Impl::PushVideoData(const uint8_t *data, size_t size, bool key_frame,uint64_t timestamp) {
-
-    if (!bStartPushFrame_)
-    {
-        return -1;
-    }
 
   std::unique_lock<std::mutex> lck(fMutexFrame_);
   if (fLiveFrameQueue_.size() >= MAX_LIVE_FRAME_CNT)

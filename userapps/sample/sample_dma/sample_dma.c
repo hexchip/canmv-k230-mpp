@@ -818,9 +818,6 @@ int main(void)
     k_s32 ret;
     k_u32 loop = 0;
     k_s32 check_ret = K_SUCCESS;
-    k_u64 spend_time = 0;
-    struct timespec dma_end;
-    struct timespec dma_start;
 
     printf("dma sample case, press q to end the operation.\n");
 
@@ -951,16 +948,12 @@ int main(void)
     while (1)
     {
         /* DMA_CHN0 send */
-        clock_gettime(CLOCK_MONOTONIC, &dma_start);
         ret = kd_mpi_dma_send_frame(DMA_CHN0, &df_info[DMA_CHN0], BLOCK_TIME);
         if (ret != K_SUCCESS)
         {
             printf("send frame error\r\n");
             goto exit_label;
         }
-        clock_gettime(CLOCK_MONOTONIC, &dma_end);
-        spend_time = (dma_end.tv_sec-dma_start.tv_sec)*1000000 + (dma_end.tv_nsec - dma_start.tv_nsec)/1000;
-        printf("DMA_CHN0 use time %ld us\n", spend_time);
 
         ret = kd_mpi_dma_get_frame(DMA_CHN0, &df_info_dst[DMA_CHN0], -1);
         if (ret != K_SUCCESS)

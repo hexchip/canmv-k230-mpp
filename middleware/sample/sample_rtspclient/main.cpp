@@ -14,10 +14,15 @@ static void sigHandler(int sig_no) {
     g_exit_flag.store(true);
 }
 
-class MyRtspClient : public IOnAudioData, public IOnVideoData, public IOnAEncData, public IRtspClientEvent {
+class MyRtspClient : public IOnBackChannel, public IOnAudioData, public IOnVideoData, public IOnAEncData, public IRtspClientEvent {
   public:
     MyRtspClient() {}
 
+    // IOnBackChannel
+    virtual void OnBackChannelStart() override {
+        std::cout << "OnBackChannelStart called" << std::endl;
+        media_.StartAiAEnc();
+    }
     // IOnAEncData
     virtual void OnAEncData(k_u32 chn_id, k_u8*pdata,size_t size,k_u64 time_stamp) override {
         // std::cout << "OnAEncData -- size  = " << stream_data->len << ", timestamp = " << stream_data->time_stamp << std::endl;
@@ -29,7 +34,6 @@ class MyRtspClient : public IOnAudioData, public IOnVideoData, public IOnAEncDat
     virtual void OnAudioStart() override {
         std::cout << "OnAudioStart called" << std::endl;
         media_.StartADecAo();
-        start_audio_ = true;
     }
     virtual void OnAudioData(const uint8_t *data, size_t size, uint64_t timestamp) override {
         if (started_) {
@@ -85,7 +89,7 @@ class MyRtspClient : public IOnAudioData, public IOnVideoData, public IOnAEncDat
         RtspClientInitParam param;
         param.on_video_data = this;
         param.on_audio_data = this;
-        param.on_backchannel = nullptr;
+        param.on_backchannel = this;
         param.on_event = this;
         if (rtsp_client_.Init(param) < 0) return -1;
         if (media_.Init() < 0) return -1;
@@ -114,9 +118,7 @@ class MyRtspClient : public IOnAudioData, public IOnVideoData, public IOnAEncDat
         started_ = false;
         rtsp_client_.Close();
         media_.StopAiAEnc();
-        if (start_audio_) {
-            media_.StopADecAo();
-        }
+        media_.StopADecAo();
         media_.StopVDecVo();
         return 0;
     }
@@ -130,7 +132,6 @@ class MyRtspClient : public IOnAudioData, public IOnVideoData, public IOnAEncDat
     uint64_t audio_timestamp;
     IOnVideoData::VideoType video_type_{IOnVideoData::VideoTypeInvalid};
     bool first_video_frame_{true};
-    bool start_audio_{false};
 };
 
 int main(int argc, char *argv[]) {

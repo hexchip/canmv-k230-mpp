@@ -229,27 +229,24 @@ void display_layer_init(k_u32 width,k_u32 height)
     }
 
     // config lyaer
-    if(width > 1080 && g_connector_type == HX8377_V2_MIPI_4LAN_1080X1920_30FPS)
+    if (width > 1088)
     {
-        info.act_size.width = height;//1080;
-        info.act_size.height = width;//1920;
-        info.func = K_ROTATION_90;
-    }
-    else if (g_connector_type == ST7701_V1_MIPI_2LAN_480X800_30FPS)
-    {
-        info.act_size.width = height;
-        info.act_size.height = width;
-        info.func = K_ROTATION_90;
-    }
-    else if (g_connector_type == LT9611_MIPI_4LAN_1920X1080_30FPS)
-    {
-        info.act_size.width = width ;
-        info.act_size.height = height;
-        info.func = 0;
+        if (g_connector_type == HX8377_V2_MIPI_4LAN_1080X1920_30FPS)
+        {
+            info.act_size.width = height;
+            info.act_size.height = width;
+            info.func = K_ROTATION_90;
+        }
+        else
+        {
+            info.act_size.width = width;
+            info.act_size.height = height;
+            info.func = 0;
+        }
     }
     else
     {
-        info.act_size.width = width ;
+        info.act_size.width = width;
         info.act_size.height = height;
         info.func = 0;
     }
