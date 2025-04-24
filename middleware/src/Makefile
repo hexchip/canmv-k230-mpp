@@ -5,10 +5,10 @@ include $(MPP_SRC_DIR)/middleware/rt-smart.mk
 
 include $(SDK_SRC_ROOT_DIR)/.config
 
-dir-y := kdmedia live555 mp4_format mp4_player rtsp_client  rtsp_server
+dir-y := kdmedia live555 mp4_format mp4_player rtsp_client rtsp_server
 
-dir-$(CONFIG_MPP_ENABLE_MIDDLEWARE_LIB_X264)		+= x264
-dir-$(CONFIG_MPP_ENABLE_MIDDLEWARE_LIB_FFMPEG)		+= ffmpeg
+dir-$(CONFIG_MPP_ENABLE_MIDDLEWARE_LIB_X264)		+= x264/src
+dir-$(CONFIG_MPP_ENABLE_MIDDLEWARE_LIB_FFMPEG)		+= ffmpeg/src
 dir-$(CONFIG_MPP_ENABLE_MIDDLEWARE_LIB_RTSP_PUSHER)	+= rtsp_pusher
 
 # Add directories to the build system
@@ -18,9 +18,8 @@ all:
 	@rm -rf $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/*
 	@$(foreach dir,$(dirs), \
 		$(MAKE) -C $(dir) all || exit $?; \
-		if [ "$(dir)" = "ffmpeg" ] || [ "$(dir)" = "x264" ]; then \
+		if [ "$(dir)" = "ffmpeg/src" ] || [ "$(dir)" = "x264/src" ]; then \
 			$(MAKE) -C $(dir) install || exit $?; \
-			$(MAKE) -C $(dir) clean || exit $?; \
 		fi; \
 	)
 

@@ -7,40 +7,59 @@ include $(SDK_SRC_ROOT_DIR)/.config
 CURRECT_DIR_NAME=$(shell basename `pwd`)
 LOCAL_SRC_DIR = $(shell pwd)
 LIB = $(MPP_SRC_DIR)/kernel/lib/lib$(CURRECT_DIR_NAME).a
+BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/kernel/$(CURRECT_DIR_NAME)
 
 LOCAL_CFLAGS = -I$(LOCAL_SRC_DIR)/src/ \
 			   -I$(RTSMART_SRC_DIR)/kernel/bsp/maix3/board/interdrv/gpio
 
-obj-y := src/connector_comm.o src/connector_dev.o
+src-y := src/connector_comm.c src/connector_dev.c
 
-obj-$(CONFIG_MPP_ENABLE_DSI_DEBUGGER) += src/debugger.o
+src-$(CONFIG_MPP_ENABLE_DSI_DEBUGGER) += src/debugger.c
 
-obj-$(CONFIG_MPP_DSI_ENABLE_VIRT) += src/virtdev.o
+src-$(CONFIG_MPP_DSI_ENABLE_VIRT) += src/virtdev.c
 
-obj-$(CONFIG_MPP_DSI_ENABLE_HDMI_LT9611) += src/lt9611.o
-obj-$(CONFIG_MPP_DSI_ENABLE_LCD_HX8399) += src/hx8399.o
+src-$(CONFIG_MPP_DSI_ENABLE_HDMI_LT9611) += src/lt9611.c
+src-$(CONFIG_MPP_DSI_ENABLE_LCD_HX8399) += src/hx8399.c
 
-obj-$(CONFIG_MPP_DSI_ENABLE_LCD_ST7701) += src/st7701.o
-obj-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9806) += src/ili9806.o
-obj-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9881) += src/ili9881.o
+src-$(CONFIG_MPP_DSI_ENABLE_LCD_ST7701) += src/st7701.c
+src-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9806) += src/ili9806.c
+src-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9881) += src/ili9881.c
 
-OBJS = $(obj-y)
+SRCS = $(wildcard *.c)
+COBJS 	:= $(patsubst %, $(BUILD)/%, $(src-y:.c=.o))
+CDEPS 	:= $(patsubst %, $(BUILD)/%, $(src-y:.c=.o.d))
 
+CPP_SRCS = $(wildcard *.cpp)
+CPP_OBJS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o))
+CPP_DEPS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o.d))
+
+OBJS := $(COBJS) $(CPP_OBJS)
+DEPS := $(CDEPS) $(CPP_DEPS)
+
+.PHONY: all
 all: $(LIB)
-	@-rm -f $(OBJS)
-	echo "${PWD}/Makefile all"
+	@echo "Make lib$(CURRECT_DIR_NAME) done."
 
-$(OBJS): %.o : %.c
-	@$(CC) $(CC_CFLAGS) -Wno-error $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_DRIVER_CFLGAS) -c $< -o $@
+.PHONY: clean
+clean:
+	@rm -rf $(LIB) $(OBJS) $(DEPS)
 
 $(LIB): $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	@echo "AR $@"
+	@$(AR) $(ARFLAGS) $@ $(OBJS)
 
-clean:
-	echo "${PWD}/Makefile clean"
-	-rm -rf $(LIB)
-	-rm -f $(OBJS)
+$(OBJS): $(BUILD)/%.o : %.c
+	@echo [CC] $<
+	@$(CC) $(CC_CFLAGS) -Wno-error $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_DRIVER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
-.PHONY: all clean
+# $(sort $(var)) removes duplicates
+#
+# The net effect of this, is it causes the objects to depend on the
+# object directories (but only for existence), and the object directories
+# will be created if they don't exist.
+OBJ_DIRS = $(sort $(dir $(OBJS)))
+$(OBJS): | $(OBJ_DIRS)
+$(OBJ_DIRS):
+	@mkdir -p $@
 
-
+-include $(DEPS)

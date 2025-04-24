@@ -6,29 +6,48 @@ include $(MPP_SRC_DIR)/userapps/sample/rt-smart.mk
 CURRECT_DIR_NAME=$(shell basename `pwd`)
 LOCAL_SRC_DIR = $(shell pwd)
 BIN = $(MPP_USERAPP_SMAPLE_ELF_DIR)/$(CURRECT_DIR_NAME).elf
+BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/userapps/sample/$(CURRECT_DIR_NAME)
 LIBPATH = $(MPP_LIB_PATH)
 LIBS = $(MPP_LIBS)
 
 LOCAL_CFLAGS = -I$(LOCAL_SRC_DIR)
 
-SRCS = $(wildcard $(LOCAL_SRC_DIR)/*.c)
+SRCS = $(wildcard *.c)
+COBJS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o))
+CDEPS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o.d))
 
-OBJS = $(patsubst %.c,%.o,$(SRCS))
+CPP_SRCS = $(wildcard *.cpp)
+CPP_OBJS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o))
+CPP_DEPS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o.d))
+
+OBJS := $(COBJS) $(CPP_OBJS)
+DEPS := $(CDEPS) $(CPP_DEPS)
 
 all: $(BIN)
-	@-rm -f $(OBJS)
-	echo "${PWD}/Makefile all"
-	cp ./foreman_128x64_3frames.yuv $(MPP_USERAPP_SMAPLE_ELF_DIR)
+	@cp ./foreman_128x64_3frames.yuv $(MPP_USERAPP_SMAPLE_ELF_DIR)
+	@echo "Make sample $(CURRECT_DIR_NAME) done."
 
-$(OBJS): %.o : %.c
-	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -c $< -o $@
+$(COBJS): $(BUILD)/%.o : %.c
+	@echo [CC] $@
+	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 $(BIN): $(OBJS)
-	$(CC) -o $(BIN) $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $(OBJS) -L$(LIBPATH) -Wl,--start-group $(LIBS) -Wl,--end-group
+	@echo [LD] $@
+	@$(CC) -o $(BIN) $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $(OBJS) -L$(LIBPATH) -Wl,--start-group $(LIBS) -Wl,--end-group
 
 clean:
-	echo "${PWD}/Makefile clean"
-	-rm -rf $(BIN)
-	-rm -f $(OBJS)
+	@rm -rf $(BIN) $(OBJS) $(DEPS)
 
 .PHONY: all clean
+
+# $(sort $(var)) removes duplicates
+#
+# The net effect of this, is it causes the objects to depend on the
+# object directories (but only for existence), and the object directories
+# will be created if they don't exist.
+OBJ_DIRS = $(sort $(dir $(OBJS)))
+$(OBJS): | $(OBJ_DIRS)
+$(OBJ_DIRS):
+	@mkdir -p $@
+
+-include $(DEPS)

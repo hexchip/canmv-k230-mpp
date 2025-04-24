@@ -3,60 +3,61 @@ include ../../mkenv.mk
 include $(MPP_SRC_DIR)/middleware/mpp.mk
 include $(MPP_SRC_DIR)/middleware/rt-smart.mk
 
-BIN=libmp4.a
-# CC=riscv64-unknown-linux-gnu-gcc
-# AR=riscv64-unknown-linux-gnu-ar -rcs
-
 CC=riscv64-unknown-linux-musl-gcc
-AR=riscv64-unknown-linux-musl-ar -rc
-
-# CC=gcc -g
-# AR=gcc-ar rc
+AR=riscv64-unknown-linux-musl-ar
 
 CURRECT_DIR_NAME=$(shell pwd)
+LIB = $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/libmp4.a
 
-CFLAGS=
-DEFINE=
-TARGET_DIR=$(MPP_MIDDLEWARE_LIB_INSTALL_PATH)
-BUILD_DIR=$(MPP_BUILD_DIR)/middleware/mp4_format
+BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/middleware/mp4_format
 
-MP4_SRC=src
-MOV_SRC=src/libmov/source
-FLV_SRC=src/libflv/source
+INCS := -I$(CURRECT_DIR_NAME)/include
+INCS += -I$(CURRECT_DIR_NAME)/src/libflv/include
+INCS += -I$(CURRECT_DIR_NAME)/src/libmov/include
 
-$(shell if [ ! -e $(TARGET_DIR) ];then mkdir -p $(TARGET_DIR); fi)
-$(shell if [ ! -e $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR); fi)
+SRC_DIRS := src
+SRC_DIRS += src/libmov/source
+SRC_DIRS += src/libflv/source
 
-INCS=-I$(CURRECT_DIR_NAME)/include
-INCS+=-I$(CURRECT_DIR_NAME)/src/libflv/include
-INCS+=-I$(CURRECT_DIR_NAME)/src/libmov/include
+SRCS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
 
-MP4_SRCS:= $(foreach dir, $(MP4_SRC), $(wildcard $(dir)/*.c $()))
-MP4_COBJS:= $(addprefix $(BUILD_DIR)/,$(patsubst %.c,%.o,$(notdir $(MP4_SRCS))))
-MOV_SRCS:= $(foreach dir, $(MOV_SRC), $(wildcard $(dir)/*.c $()))
-MOV_COBJS:= $(addprefix $(BUILD_DIR)/,$(patsubst %.c,%.o,$(notdir $(MOV_SRCS))))
-FLV_SRCS:= $(foreach dir, $(FLV_SRC), $(wildcard $(dir)/*.c $()))
-FLV_COBJS:= $(addprefix $(BUILD_DIR)/,$(patsubst %.c,%.o,$(notdir $(FLV_SRCS))))
+COBJS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o))
+CDEPS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o.d))
 
-all:$(BIN)
-	# @rm -f $(MP4_COBJS)
-	# @rm -f $(MOV_COBJS)
-	# @rm -f $(FLV_COBJS)
+CPP_SRCS = $(wildcard *.cpp)
+CPP_OBJS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o))
+CPP_DEPS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o.d))
 
-$(MOV_COBJS) : $(BUILD_DIR)/%.o: $(MOV_SRC)/%.c
-	$(CC) -c -fPIC $(CFLAGS) $< -o $@ $(INCS)  $(DEFINE)
+OBJS := $(COBJS) $(CPP_OBJS)
+DEPS := $(CDEPS) $(CPP_DEPS)
 
-$(FLV_COBJS) : $(BUILD_DIR)/%.o: $(FLV_SRC)/%.c
-	$(CC) -c -fPIC $(CFLAGS) $< -o $@ $(INCS)  $(DEFINE)
+CFLAGS :=
+DEFINE :=
 
-$(MP4_COBJS) : $(BUILD_DIR)/%.o: $(MP4_SRC)/%.c
-	$(CC) -c -fPIC $(CFLAGS) $< -o $@ $(INCS)  $(DEFINE)
+all:$(LIB)
+	@echo "Make lib$(CURRECT_DIR_NAME) done."
 
-$(BIN):$(MP4_COBJS) $(MOV_COBJS) $(FLV_COBJS)
-	$(AR) -o $(TARGET_DIR)/$(BIN) $(MP4_COBJS) $(MOV_COBJS) $(FLV_COBJS)
+$(OBJS) : $(BUILD)/%.o: %.c
+	@echo [CC] $@
+	@$(CC) -c -fPIC $(CFLAGS) $< -o $@ $(INCS)  $(DEFINE) -MD -MP -MF $@.d
+
+$(LIB) : $(OBJS)
+	@echo [LD] $@
+	@$(AR) $(ARFLAGS) $@ $^
 
 clean:
-	@rm -f $(TARGET_DIR)/$(BIN) $(MP4_COBJS) $(MOV_COBJS) $(FLV_COBJS)
-	@rm -rf $(TARGET_DIR) $(BUILD_DIR)
+	@rm -f $(LIB) $(OBJS) $(DEPS)
 
 .PHONY: all clean
+
+# $(sort $(var)) removes duplicates
+#
+# The net effect of this, is it causes the objects to depend on the
+# object directories (but only for existence), and the object directories
+# will be created if they don't exist.
+OBJ_DIRS = $(sort $(dir $(OBJS)))
+$(OBJS): | $(OBJ_DIRS)
+$(OBJ_DIRS):
+	@mkdir -p $@
+
+-include $(DEPS)

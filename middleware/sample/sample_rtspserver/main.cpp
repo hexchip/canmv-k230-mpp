@@ -134,12 +134,14 @@ class MyRtspServer : public IOnBackChannel, public IOnAEncData, public IOnVEncDa
         }
     }
 
-    int Init(const KdMediaInputConfig &config, const std::string &stream_url = "test", int port = 8554) {
+    int Init(KdMediaInputConfig &config, const std::string &stream_url = "test", int port = 8554) {
 
-        if (0 != media_.DetectSensor(&config.sensor_type))
-        {
-            printf("kd_sample_sensor_auto_detect failed\n");
-            return -1;
+        if(SENSOR_TYPE_MAX == config.sensor_type) {
+            if (0 != media_.DetectSensor(&config.sensor_type))
+            {
+                printf("kd_sample_sensor_auto_detect failed\n");
+                return -1;
+            }
         }
 
         if (rtsp_server_.Init(port, this) < 0) {

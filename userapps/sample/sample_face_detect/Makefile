@@ -6,6 +6,7 @@ include $(MPP_SRC_DIR)/userapps/sample/rt-smart.mk
 CURRECT_DIR_NAME=$(shell basename `pwd`)
 LOCAL_SRC_DIR = $(shell pwd)
 BIN = $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/$(CURRECT_DIR_NAME).elf
+BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/userapps/sample/$(CURRECT_DIR_NAME)
 LIBPATH = $(MPP_LIB_PATH)
 LIBS = $(MPP_LIBS)
 AI_LIBPATH=$(MPP_SRC_DIR)/../libs/nncase
@@ -31,36 +32,47 @@ CXX_FLAGS_AI = -std=c++20 \
 			$(RISCV64_NN_INCLUDE) \
 			$(RISCV64_NN_LIBS) \
 
-SRCS = $(wildcard $(LOCAL_SRC_DIR)/*.c)
-# SRCS += $(LOCAL_SRC_DIR)/../sample_vo/vo_test_case.c \
-# 		$(LOCAL_SRC_DIR)/../sample_vo/vo_bind_test.c
+SRCS = $(wildcard *.c)
+COBJS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o))
+CDEPS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o.d))
 
-OBJS = $(patsubst %.c,%.o,$(SRCS))
+CPP_SRCS = $(wildcard *.cc)
+CPP_OBJS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cc=.o))
+CPP_DEPS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cc=.o.d))
 
-CPP_SRCS = $(wildcard $(LOCAL_SRC_DIR)/*.cc)
-
-CPP_OBJS = $(patsubst %.cc,%.o,$(CPP_SRCS))
+OBJS := $(COBJS) $(CPP_OBJS)
+DEPS := $(CDEPS) $(CPP_DEPS)
 
 all: $(BIN)
-	@-rm -f *.o
-	@echo "${PWD}/Makefile all"
+	@echo "Make sample $(CURRECT_DIR_NAME) done."
 
-$(OBJS): %.o : %.c
-	@echo CC $@
-	@$(CC) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -c $< -o $@
+$(COBJS): $(BUILD)/%.o : %.c
+	@echo [CC] $@
+	@$(CC) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
-$(CPP_OBJS): %.o : %.cc
+$(CPP_OBJS): $(BUILD)/%.o : %.cc
 	@echo CXX $@
-	@$(CPP) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -c $< -o $@
+	@$(CPP) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
-$(BIN): $(OBJS) $(CPP_OBJS)
-	@echo LD $@
+$(BIN): $(OBJS)
+	@echo [LD] $@
 	@mkdir -p $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/
 	@$(CPP) -o $(BIN)  $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $^ -L$(LIBPATH) $(CXX_FLAGS_AI) -Wl,--start-group $(LIBS) -Wl,--end-group
-	cp $(KMODEL_LIBPATH)/mobile_retinaface/test.kmodel $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/
+	@cp $(KMODEL_LIBPATH)/mobile_retinaface/test.kmodel $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/
 
 clean:
-	echo "${PWD}/Makefile clean"
-	rm -rf $(BIN) $(OBJS)
+	@rm -rf $(BIN) $(OBJS) $(DEPS)
 
 .PHONY: all clean
+
+# $(sort $(var)) removes duplicates
+#
+# The net effect of this, is it causes the objects to depend on the
+# object directories (but only for existence), and the object directories
+# will be created if they don't exist.
+OBJ_DIRS = $(sort $(dir $(OBJS)))
+$(OBJS): | $(OBJ_DIRS)
+$(OBJ_DIRS):
+	@mkdir -p $@
+
+-include $(DEPS)

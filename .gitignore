@@ -1,4 +1,8 @@
 *.o
+*.o.d
+*.d
+*.version
+.depend
 
 build
 
@@ -26,6 +30,17 @@ userapps/sample/elf/
 
 middleware/elf/
 middleware/lib/
+
+middleware/src/ffmpeg/src/**/lib*.a
+middleware/src/ffmpeg/src/**/lib*.pc
+middleware/src/ffmpeg/src/ffprobe
+middleware/src/ffmpeg/src/ffprobe_g
+middleware/src/ffmpeg/src/lib_ffmpeg
+
+middleware/src/x264/src/x264
+middleware/src/x264/src/lib_x264
+middleware/src/x264/src/libx264.a
+middleware/src/x264/src/common/oclobj.h
 
 userapps/src/sensor/dewarp/imx335-1920x1080.bin
 userapps/src/sensor/dewarp/imx335-2592x1944.bin

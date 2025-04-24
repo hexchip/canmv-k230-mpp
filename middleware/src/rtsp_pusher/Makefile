@@ -4,11 +4,11 @@ include $(MPP_SRC_DIR)/middleware/mpp.mk
 include $(MPP_SRC_DIR)/middleware/rt-smart.mk
 
 AR = riscv64-unknown-linux-musl-ar
-ARFLAGS = -rc
 
 CURRECT_DIR_NAME=$(shell basename `pwd`)
 LOCAL_SRC_DIR = $(shell pwd)
-BIN = $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/lib$(CURRECT_DIR_NAME).a
+LIB = $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/lib$(CURRECT_DIR_NAME).a
+BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/middleware/$(CURRECT_DIR_NAME)
 LIBPATH = $(MPP_LIB_PATH)
 LIBS = $(MPP_LIBS)
 
@@ -28,32 +28,43 @@ WERROR_FLAGS = -Wno-register -Wno-multichar -Wno-pessimizing-move -Wno-deprecate
 CXX_FLAGS = -std=c++20 \
 			$(WERROR_FLAGS)
 
-SRCS = $(wildcard $(LOCAL_SRC_DIR)/*.c)
+SRCS = $(wildcard *.c)
+COBJS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o))
+CDEPS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o.d))
 
-OBJS = $(patsubst %.c,%.o,$(SRCS))
+CPP_SRCS = $(wildcard *.cpp)
+CPP_OBJS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o))
+CPP_DEPS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o.d))
 
-CPP_SRCS = $(wildcard $(LOCAL_SRC_DIR)/*.cpp)
+OBJS := $(COBJS) $(CPP_OBJS)
+DEPS := $(CDEPS) $(CPP_DEPS)
 
-CPP_OBJS = $(patsubst %.cpp,%.o,$(CPP_SRCS))
+all:$(LIB)
+	@echo "Make lib$(CURRECT_DIR_NAME) done."
 
-all:$(BIN)
-	@-rm -f *.o
-	@echo "${PWD}/Makefile all"
-
-$(OBJS): %.o : %.c
+$(COBJS): $(BUILD)/%.o : %.c
 	@echo CC $@
-	@$(CC) $(CC_CFLAGS_EX) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) $(LOCAL_LIBS)-c $< -o $@
+	@$(CC) $(CC_CFLAGS_EX) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) $(LOCAL_LIBS) -MD -MP -MF $@.d -c $< -o $@
 
-$(CPP_OBJS): %.o : %.cpp
+$(CPP_OBJS): $(BUILD)/%.o : %.cpp
 	@echo CXX $@
-	@$(CPP) $(CC_CFLAGS_EX) $(CXX_FLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) $(LOCAL_LIBS) -c $< -o $@
+	@$(CPP) $(CC_CFLAGS_EX) $(CXX_FLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) $(LOCAL_LIBS) -MD -MP -MF $@.d -c $< -o $@
 
-$(BIN): $(OBJS) $(CPP_OBJS)
-	@echo LD $@
-	#@$(CPP) -o $(BIN)  $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $^ -L$(LIBPATH) $(CXX_FLAGS) $(LOCAL_LIBS) $(LOCAL_LIBS_PATH) -Wl,--start-group $(LIBS) -Wl,--end-group
-	$(AR) $(ARFLAGS) $@ $^
+$(LIB): $(OBJS)
+	@echo [LD] $@
+	@$(AR) $(ARFLAGS) $@ $^
+
 clean:
-	echo "${PWD}/Makefile clean"
-	rm -rf $(BIN) $(OBJS) $(CPP_OBJS)
+	@rm -rf $(LIB) $(OBJS) $(DEPS)
+
+# $(sort $(var)) removes duplicates
+#
+# The net effect of this, is it causes the objects to depend on the
+# object directories (but only for existence), and the object directories
+# will be created if they don't exist.
+OBJ_DIRS = $(sort $(dir $(OBJS)))
+$(OBJS): | $(OBJ_DIRS)
+$(OBJ_DIRS):
+	@mkdir -p $@
 
 .PHONY: all clean

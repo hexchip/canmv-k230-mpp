@@ -105,13 +105,16 @@ public:
         }
     }
 
-    int Init(const KdMediaInputConfig &config)
+    int Init(KdMediaInputConfig &config)
     {
-        if (0 != media_.DetectSensor(&config.sensor_type))
-        {
-            printf("kd_sample_sensor_auto_detect failed\n");
-            return -1;
+        if(SENSOR_TYPE_MAX == config.sensor_type) {
+            if (0 != media_.DetectSensor(&config.sensor_type))
+            {
+                printf("kd_sample_sensor_auto_detect failed\n");
+                return -1;
+            }
         }
+
         mp4_muxer_init(config);
         if (media_.Init(config) < 0)
             return -1;

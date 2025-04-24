@@ -4,26 +4,45 @@ include $(MPP_SRC_DIR)/userapps/src/rt-smart.mk
 CURRECT_DIR_NAME=$(shell basename `pwd`)
 LOCAL_SRC_DIR = $(shell pwd)
 LIB = $(MPP_SRC_DIR)/userapps/lib/lib$(CURRECT_DIR_NAME).a
+BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/userapps/$(CURRECT_DIR_NAME)
 
 LOCAL_CFLAGS = -I$(LOCAL_SRC_DIR)/
 
-SRCS = $(wildcard $(LOCAL_SRC_DIR)/*.c)
+SRCS = $(wildcard *.c)
+COBJS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o))
+CDEPS 	:= $(patsubst %, $(BUILD)/%, $(SRCS:.c=.o.d))
 
-OBJS = $(patsubst %.c,%.o,$(SRCS))
+CPP_SRCS = $(wildcard *.cpp)
+CPP_OBJS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o))
+CPP_DEPS 	:= $(patsubst %, $(BUILD)/%, $(CPP_SRCS:.cpp=.o.d))
 
+OBJS := $(COBJS) $(CPP_OBJS)
+DEPS := $(CDEPS) $(CPP_DEPS)
+
+.PHONY: all
 all: $(LIB)
-	@-rm -f $(OBJS)
-	echo "${PWD}/Makefile all"
+	@echo "Make lib$(CURRECT_DIR_NAME) done."
 
-$(OBJS): %.o : %.c
-	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -c $< -o $@
+.PHONY: clean
+clean:
+	@rm -rf $(LIB) $(OBJS) $(DEPS)
 
 $(LIB): $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	@echo "AR $@"
+	@$(AR) $(ARFLAGS) $@ $(OBJS)
 
-clean:
-	echo "${PWD}/Makefile clean"
-	-rm -rf $(LIB)
-	-rm -f $(OBJS)
+$(OBJS): $(BUILD)/%.o : %.c
+	@echo [CC] $<
+	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
-.PHONY: all clean
+# $(sort $(var)) removes duplicates
+#
+# The net effect of this, is it causes the objects to depend on the
+# object directories (but only for existence), and the object directories
+# will be created if they don't exist.
+OBJ_DIRS = $(sort $(dir $(OBJS)))
+$(OBJS): | $(OBJ_DIRS)
+$(OBJ_DIRS):
+	@mkdir -p $@
+
+-include $(DEPS)

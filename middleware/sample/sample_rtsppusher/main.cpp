@@ -124,13 +124,15 @@ class MyRtspServer : public IOnAEncData, public IOnVEncData {
         }
     }
 
-    int Init(const KdMediaInputConfig &config) {
-
-        if (0 != media_.DetectSensor(&config.sensor_type))
-        {
-            printf("kd_sample_sensor_auto_detect failed\n");
-            return -1;
+    int Init(KdMediaInputConfig &config) {
+        if(SENSOR_TYPE_MAX == config.sensor_type) {
+            if (0 != media_.DetectSensor(&config.sensor_type))
+            {
+                printf("kd_sample_sensor_auto_detect failed\n");
+                return -1;
+            }
         }
+
         if (media_.Init(config) < 0) return -1;
         if (media_.CreateAiAEnc(this) < 0) return -1;
         if (media_.CreateADecAo() < 0) return -1;
