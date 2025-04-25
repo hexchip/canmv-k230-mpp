@@ -23,11 +23,11 @@ DEPS := $(CDEPS) $(CPP_DEPS)
 
 .PHONY: all
 all: $(LIB)
+	@echo "Make lib$(CURRECT_DIR_NAME) done."
 
 .PHONY: clean
 clean:
 	@rm -rf $(LIB) $(OBJS) $(DEPS)
-	@echo "Make lib$(CURRECT_DIR_NAME) done."
 
 $(LIB): $(OBJS)
 	@echo "AR $@"
