@@ -15,6 +15,7 @@ public:
 	int  pushVideo(char* pBuf, int nLen, bool bKey, unsigned long long nTimeStamp);
 	int  open();
 	void close();
+	int  deinit();
 
 	void setSPSPPS(char* pSPSBuf, int nSPSLen, char* pPPSBuf, int nPPSLen);
 	void setSPSPPS_EX(char* pSPSPPSBuf,int nLen);
@@ -54,4 +55,5 @@ private:
 	pthread_mutex_t m_Lock;
 	pthread_t m_hConnectThread;
 	static bool  m_bFfmpegInit;
+	bool m_start_reconnect;
 };

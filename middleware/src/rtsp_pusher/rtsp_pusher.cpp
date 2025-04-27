@@ -34,6 +34,7 @@ class KdRtspPusher::Impl {
     void Close();
 
     int PushVideoData(const uint8_t *data, size_t size, bool key_frame,uint64_t timestamp);
+    int PushVideoHeader(const uint8_t *data, size_t size);
 
   private:
     Impl(const Impl &) = delete;
@@ -54,6 +55,8 @@ class KdRtspPusher::Impl {
     pthread_t    hpushFrameThread_;
     bool         bStartPushFrame_ = false;
     RtspPusherInitParam PusherInitParam_;
+    char         video_header_[1024];
+    int          video_header_len_ = {0};
 
 };
 
@@ -67,15 +70,16 @@ int KdRtspPusher::Impl::Init(const RtspPusherInitParam &param) {
 
 void KdRtspPusher::Impl::DeInit() {
     _deinit_frame_free_queue();
+    rtsp_pusher_.deinit();
     return ;
 }
 
 int KdRtspPusher::Impl::Open() {
-
+  rtsp_pusher_.open();
   bStartPushFrame_ = true;
   pthread_create(&hpushFrameThread_, NULL, push_data_thread, this);
 
-  return rtsp_pusher_.open();
+  return 0;
 }
 
 void KdRtspPusher::Impl::Close() {
@@ -88,7 +92,24 @@ void KdRtspPusher::Impl::Close() {
   rtsp_pusher_.close();
 }
 
+int  KdRtspPusher::Impl::PushVideoHeader(const uint8_t *data, size_t size)
+{
+    if (size > 1024)
+    {
+        printf("push_venc_header size:%d(max size:%d)\n",size,1024);
+        return -1;
+    }
+    memcpy(video_header_,data,size);
+    video_header_len_ = size;
+    return 0;
+}
+
 int KdRtspPusher::Impl::PushVideoData(const uint8_t *data, size_t size, bool key_frame,uint64_t timestamp) {
+
+    if (!bStartPushFrame_)
+    {
+        return -1;
+    }
 
   std::unique_lock<std::mutex> lck(fMutexFrame_);
   if (fLiveFrameQueue_.size() >= MAX_LIVE_FRAME_CNT)
@@ -123,7 +144,17 @@ int KdRtspPusher::Impl::PushVideoData(const uint8_t *data, size_t size, bool key
   livePacket->timestamp = timestamp;
   livePacket->dataLen = size;
   livePacket->key_frame = key_frame;
-  memcpy(livePacket->sData,data,size);
+  if (video_header_len_ > 0)
+  {
+      memcpy(livePacket->sData,video_header_,video_header_len_);
+      memcpy(livePacket->sData + video_header_len_,data,size);
+      livePacket->dataLen += video_header_len_;
+  }
+  else
+  {
+      memcpy(livePacket->sData,data,size);
+  }
+
   fLiveFrameQueue_.push_back(livePacket);
   return 0;
 }
@@ -196,7 +227,7 @@ int  KdRtspPusher::Impl::_do_push_frame_data()
         std::unique_lock<std::mutex> lck(fMutexFrame_);
         if (fLiveFrameQueue_.size() > 0)
         {
-            if (++ ncount  % 100 == 0)
+            if (++ ncount  % 1000 == 0)
             {
                 printf("[%d]%s fLiveFrameQueue_ size:%d,free framequeue size:%d\n",ncount,PusherInitParam_.sRtspUrl, fLiveFrameQueue_.size(),fLiveFrameFreeQueue_.size());
             }
@@ -250,5 +281,9 @@ void KdRtspPusher::Close() {
 
 int KdRtspPusher::PushVideoData(const uint8_t *data, size_t size, bool key_frame,uint64_t timestamp) {
   return impl_->PushVideoData(data, size,key_frame, timestamp);
+}
+
+int KdRtspPusher::PushVideoHeader(const uint8_t *data, size_t size) {
+  return impl_->PushVideoHeader(data, size);
 }
 
