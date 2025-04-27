@@ -28,6 +28,7 @@ class KdRtspPusher {
     void Close();
 
     int  PushVideoData(const uint8_t *data, size_t size, bool key_frame,uint64_t timestamp);
+    int  PushVideoHeader(const uint8_t *data, size_t size);
 
   private:
     KdRtspPusher(const KdRtspPusher &) = delete;
