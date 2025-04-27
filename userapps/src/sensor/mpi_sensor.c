@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 
+#include "k_errno.h"
 #include "k_sensor_comm.h"
 #include "k_vicap_comm.h"
 #include "k_sensor_ioctl.h"
@@ -1158,6 +1159,8 @@ k_s32 kd_mpi_sensor_open(const char *sensor_name)
 k_s32 kd_mpi_sensor_close(k_s32 fd)
 {
     close(fd);
+
+    return K_ERR_OK;
 }
 
 k_s32 kd_mpi_sensor_power_set(k_s32 fd, k_bool on)
