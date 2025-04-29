@@ -22,13 +22,13 @@ dirs := $(sort $(dir-y))
 all:
 	@rm -rf $(MPP_MIDDLEWARE_ELF_INSTALL_PATH)/*.*
 ifeq ($(CONFIG_MPP_ENABLE_MIDDLEWARE_SAMPLES),y)
-	@$(foreach dir,$(dirs),make -C $(dir) all;)
+	@$(foreach dir,$(dirs),$(MAKE) -C $(dir) all;)
 endif
 	@echo "Make MPP Middleware samples done."
 
 clean:
 	@rm -rf $(MPP_MIDDLEWARE_ELF_INSTALL_PATH)/*.*
 ifeq ($(CONFIG_MPP_ENABLE_MIDDLEWARE_SAMPLES),y)
-	@$(foreach dir,$(dirs),make -C $(dir) clean;)
+	@$(foreach dir,$(dirs),$(MAKE) -C $(dir) clean;)
 endif
 	@echo "Clean MPP Middleware samples done."
