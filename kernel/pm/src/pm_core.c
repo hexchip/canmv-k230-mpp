@@ -551,7 +551,7 @@ int pm_core_init(void)
     ret = rt_mutex_init(&pm_device.mutex, "pm_mutex", RT_IPC_FLAG_PRIO);
 
     tid = rt_thread_create("thermal_detect_thread", thermal_detect_thread,
-        RT_NULL, 1024 * 10, RT_THREAD_PRIORITY_MAX / 2,
+        RT_NULL, 1024 * 10, RT_THREAD_PRIORITY_MAX - 3,
         rt_tick_from_millisecond(10));
     rt_thread_startup(tid);
 

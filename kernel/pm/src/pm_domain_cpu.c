@@ -90,7 +90,7 @@ static int init(void)
     rt_thread_t tid;
 
     tid = rt_thread_create("auto_load_thread", auto_load_thread,
-        RT_NULL, 1024 * 10, RT_THREAD_PRIORITY_MAX / 2,
+        RT_NULL, 1024 * 10, RT_THREAD_PRIORITY_MAX - 3,
         rt_tick_from_millisecond(10));
     rt_thread_startup(tid);
 
