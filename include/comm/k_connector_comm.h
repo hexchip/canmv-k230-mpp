@@ -141,6 +141,9 @@ typedef struct {
     k_u8 cmd_data[0];
 } k_connector_cmd_slice;
 
+#define CONNECTOR_CMD_SEQUENCE(type, delay, ...)                                                                       \
+    (type), (delay), sizeof((uint8_t[]) { __VA_ARGS__ }) / sizeof(uint8_t), __VA_ARGS__
+
 #if defined (CONFIG_MPP_ENABLE_DSI_DEBUGGER)
 typedef struct {
     k_u32 seq_size;
