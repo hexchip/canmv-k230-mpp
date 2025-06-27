@@ -277,7 +277,7 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
 
         // now, we just support one gc2093
         .reg_list = gc2093_mipi2lane_1080p_30fps_mclk_24m_linear,
-        .sensor_ae_info = &sensor_csi0_ae_info[4],
+        .sensor_ae_info = &sensor_csi1_ae_info[4],
 #endif
     },
     {
@@ -328,7 +328,7 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
 
         // now, we just support one gc2093
         .reg_list = gc2093_mipi2lane_1080p_60fps_mclk_24m_linear,
-        .sensor_ae_info = &sensor_csi0_ae_info[5],
+        .sensor_ae_info = &sensor_csi1_ae_info[5],
 #endif
     },
     {
@@ -383,7 +383,7 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
 
         // now, we just support one gc2093
         .reg_list = gc2093_mipi2lane_960p_90fps_linear,
-        .sensor_ae_info = &sensor_csi0_ae_info[2],
+        .sensor_ae_info = &sensor_csi1_ae_info[2],
 #endif
     },
     {
@@ -434,7 +434,7 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
 
         // now, we just support one gc2093
         .reg_list = gc2093_mipi2lane_720p_90fps_mclk_24m_linear,
-        .sensor_ae_info = &sensor_csi0_ae_info[7],
+        .sensor_ae_info = &sensor_csi1_ae_info[7],
 #endif
     },
 };
