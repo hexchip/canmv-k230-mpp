@@ -343,6 +343,10 @@ menu "MPP Configuration"
             bool "Enable LCD Display Panel Driver ili9881"
             default n
 
+        config MPP_DSI_ENABLE_LCD_NT35516
+            bool "Enable LCD Display Panel Driver nt35516"
+            default n
+
     endmenu
 
     menu "Middleware Configuration"
