@@ -100,6 +100,11 @@ static struct sensor_type_mirror_t type_mirror_tbl[] = {
 static struct sensor_type_mirror_t type_mirror_tbl[] = {
     // {.type =, .mirror = },
 };
+#elif defined(CONFIG_BOARD_K230_CANMV_RTT_EVB)
+static struct sensor_type_mirror_t type_mirror_tbl[] = {
+    // {.type =, .mirror = },
+};
+
 #elif defined(CONFIG_BOARD_K230D_CANMV_BPI_ZERO)
 static struct sensor_type_mirror_t type_mirror_tbl[] = {
     // {.type =, .mirror = },
@@ -114,6 +119,7 @@ static struct sensor_type_mirror_t type_mirror_tbl[] = {
     defined(CONFIG_BOARD_K230D_CANMV) ||                                       \
     defined(CONFIG_BOARD_K230_CANMV_01STUDIO) ||                               \
     defined(CONFIG_BOARD_K230_CANMV_DONGSHANPI) || \
+    defined(CONFIG_BOARD_K230_CANMV_RTT_EVB) || \
     defined(CONFIG_BOARD_K230D_CANMV_BPI_ZERO) || \
     defined(CONFIG_BOARD_K230D_CANMV_ATK_DNK230D)
 
