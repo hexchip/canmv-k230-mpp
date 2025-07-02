@@ -244,6 +244,7 @@ typedef enum {
     VICAP_WORK_LOAD_IMAGE_MODE,
     VICAP_WORK_ONLY_MCM_MODE,
     VICAP_WORK_SW_TILE_MODE,
+    VICAP_WORK_MCM_MIPI_MODE,
 } k_vicap_work_mode;
 
 /**
@@ -599,6 +600,7 @@ typedef struct {
     k_vicap_mcm_cfg cfg;
     k_vicap_chn mcm_chn;
     k_u32 buff_num;
+    k_u32 work_mode;
 }k_vicap_mcm_chn_attr;
 
 /**
