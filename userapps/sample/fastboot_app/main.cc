@@ -311,7 +311,7 @@ k_s32 sample_connector_init(void)
 #elif defined(CONFIG_BOARD_K230_CANMV_DONGSHANPI)
     k_connector_type connector_type = ILI9806_MIPI_2LAN_480X800_30FPS;
 #elif defined(CONFIG_BOARD_K230_CANMV_RTT_EVB)
-    k_connector_type connector_type = NT35516_MIPI_2LAN_540X960_30FPS;
+    k_connector_type connector_type = NT35516_MIPI_2LAN_536X960_30FPS;
 #else
     k_connector_type connector_type = HX8377_V2_MIPI_4LAN_1080X1920_30FPS;
 #endif

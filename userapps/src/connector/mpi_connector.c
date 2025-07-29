@@ -380,8 +380,8 @@ k_connector_info connector_info_list[] = {
         .resolution = {
             .pclk = 39600, //  = 30879 * 1000 / (hdisplay + hsync_len + hback_porch + hfront_porch) / (vdisplay + vback_porch + vsync_len + vfront_porch)
             .phyclk = 475200,
-            .htotal = (540 + 40 + 20 + 20), // 516
-            .hdisplay = 540,
+            .htotal = (536 + 40 + 20 + 20), // 516
+            .hdisplay = 536,
             .hsync_len = 40,
             .hback_porch = 20,
             .hfront_porch = 20,
@@ -391,7 +391,7 @@ k_connector_info connector_info_list[] = {
             .vback_porch = 20,
             .vfront_porch = 110,
         },
-        .type = NT35516_MIPI_2LAN_540X960_30FPS,
+        .type = NT35516_MIPI_2LAN_536X960_30FPS,
     },
     {
         "virtdev",
