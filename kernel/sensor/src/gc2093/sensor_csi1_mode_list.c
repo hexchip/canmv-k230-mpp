@@ -250,7 +250,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
             .data_type = 0x2B,
         },
 #ifdef CONFIG_MPP_SENSOR_GC2093_ON_CSI1_USE_CHIP_CLK
-#if defined(CONFIG_BOARD_K230D_CANMV_ATK_DNK230D)
         .mclk_setting = {
             {
                 .mclk_setting_en = K_TRUE,
@@ -263,9 +262,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
         },
         .reg_list = gc2093_mipi2lane_1080p_30fps_linear,
         .sensor_ae_info = &sensor_csi1_ae_info[0],
-#else
-    #error "INVALID CONFIGURE"
-#endif
 #else
         .mclk_setting = {
             {K_FALSE},
@@ -301,7 +297,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
             .data_type = 0x2B,
         },
 #ifdef CONFIG_MPP_SENSOR_GC2093_ON_CSI1_USE_CHIP_CLK
-#if defined(CONFIG_BOARD_K230D_CANMV_ATK_DNK230D)
         .mclk_setting = {
             {
                 .mclk_setting_en = K_TRUE,
@@ -314,9 +309,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
         },
         .reg_list = gc2093_mipi2lane_1080p_60fps_linear,
         .sensor_ae_info = &sensor_csi1_ae_info[1],
-#else
-    #error "INVALID CONFIGURE"
-#endif
 #else
         .mclk_setting = {
             {K_FALSE},
@@ -356,7 +348,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
             .data_type = 0x2B,
         },
 #ifdef CONFIG_MPP_SENSOR_GC2093_ON_CSI1_USE_CHIP_CLK
-#if defined(CONFIG_BOARD_K230D_CANMV_ATK_DNK230D)
         .mclk_setting = {
             {
                 .mclk_setting_en = K_TRUE,
@@ -369,9 +360,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
         },
         .reg_list = gc2093_mipi2lane_960p_90fps_linear,
         .sensor_ae_info = &sensor_csi1_ae_info[2],
-#else
-    #error "INVALID CONFIGURE"
-#endif
 #else
         .mclk_setting = {
             {K_FALSE},
@@ -407,7 +395,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
             .data_type = 0x2B,
         },
 #ifdef CONFIG_MPP_SENSOR_GC2093_ON_CSI1_USE_CHIP_CLK
-#if defined(CONFIG_BOARD_K230D_CANMV_ATK_DNK230D)
         .mclk_setting = {
             {
                 .mclk_setting_en = K_TRUE,
@@ -420,9 +407,6 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
         },
         .reg_list = gc2093_mipi2lane_720p_90fps_linear,
         .sensor_ae_info = &sensor_csi1_ae_info[3],
-#else
-    #error "INVALID CONFIGURE"
-#endif
 #else
         .mclk_setting = {
             {K_FALSE},
