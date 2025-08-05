@@ -58,7 +58,7 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
                 .mipi_lanes = 1,
                 .data_type = 0x2B,
             },
-#if defined(MPP_ENABLE_SENSOR_BF3238_ON_CSI1_USE_CHIP_CLK)
+#if defined(CONFIG_MPP_ENABLE_SENSOR_BF3238_ON_CSI1_USE_CHIP_CLK)
         .reg_list = bf3238_mipi_1lane_1920x1080_init,
         .mclk_setting =
             {
@@ -110,7 +110,7 @@ static const k_sensor_mode sensor_csi1_mode_list[] = {
                 .mipi_lanes = 1,
                 .data_type = 0x2B,
             },
-#if defined(MPP_ENABLE_SENSOR_BF3238_ON_CSI1_USE_CHIP_CLK)
+#if defined(CONFIG_MPP_ENABLE_SENSOR_BF3238_ON_CSI1_USE_CHIP_CLK)
         .reg_list = bf3238_mipi_1lane_1280x960_init,
         .mclk_setting =
             {
