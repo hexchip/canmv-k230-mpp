@@ -337,7 +337,6 @@ k_s32 kd_mpi_vicap_set_slave_attr(k_vicap_slave_id id, k_vicap_slave_info *info)
  */
 k_s32 kd_mpi_vicap_3d_mode_crtl(k_bool enable);
 
-
 /**
  * @brief vicap set sensor mlk
  *
@@ -352,12 +351,14 @@ k_s32 kd_mpi_vicap_sensor_set_mclk(k_sensor_mclk sensor_mclk);
 
 k_s32 kd_mpi_vicap_sensor_disable_mclk(k_sensor_mclk sensor_mclk);
 
-
 int kd_mpi_export_vicap_config_to_bin(char *path, char *config_name);
 
 k_s32 kd_mpi_vicap_again_set(k_vicap_dev dev_num, k_sensor_gain gain);
 
 k_s32 kd_mpi_vicap_intg_time_set(k_vicap_dev dev_num, k_sensor_intg_time time);
+
+k_s32 kd_mpi_viap_set_af_enable(k_vicap_dev dev_num, k_bool enable);
+k_s32 kd_mpi_viap_get_af_enable(k_vicap_dev dev_num, k_bool *enable);
 
 /** @} */ /** <!-- ==== VICAP End ==== */
 

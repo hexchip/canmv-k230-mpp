@@ -71,7 +71,24 @@ typedef struct {
     k_s32 (*sensor_get_otp_data)(void *ctx, void *data);
     k_s32 (*sensor_set_otp_data)(void *ctx, void *data);
     k_s32 (*sensor_mirror_set)(void *ctx, k_vicap_mirror_mode mirror);
+
+    k_s32 (*sensor_set_focus_pos)(void *ctx, k_sensor_focus_pos *data);
+    k_s32 (*sensor_get_focus_pos)(void *ctx, k_sensor_focus_pos *data);
+    k_s32 (*sensor_get_foucs_cap)(void *ctx, k_sensor_autofocus_caps *caps);
+    k_s32 (*sensor_set_focus_power)(void *ctx, int on_off);
 } k_sensor_function;
+
+typedef struct {
+    const char *drv_name;
+
+    int (*probe)(void *ctx);
+    int (*set_position)(void *ctx, k_sensor_focus_pos *pos);
+    int (*get_position)(void *ctx, k_sensor_focus_pos *pos);
+    int (*get_capability)(void *ctx, k_sensor_autofocus_caps *caps);
+    int (*power)(void *ctx, int on_off);
+
+    void *priv;
+} k_sensor_af_dev;
 
 typedef struct {
     struct rt_i2c_bus_device *i2c_bus;
@@ -109,6 +126,8 @@ struct sensor_driver_dev {
     k_vicap_mirror_mode mirror_setting; /**< sensor mirrot setting, should apply when init sensor */
 
     k_sensor_mode current_sensor_mode;
+
+    k_sensor_af_dev *af_dev;
 };
 
 extern struct sensor_driver_dev g_sensor_drv[3];
@@ -131,5 +150,12 @@ extern k_s32 sensor_sc132gs_probe(struct k_sensor_probe_cfg *cfg, struct sensor_
 extern k_s32 sensor_xs9950_probe(struct k_sensor_probe_cfg *cfg, struct sensor_driver_dev *dev);
 extern k_s32 sensor_bf3238_probe(struct k_sensor_probe_cfg *cfg, struct sensor_driver_dev *dev);
 
-#endif /* _SENSOR_DEV_H_ */
+extern const k_sensor_af_dev af_dev_dw9714p;
 
+k_s32 sensor_autofocus_dev_probe(struct sensor_driver_dev *dev);
+k_s32 sensor_autofocus_dev_set_position(void *ctx, k_sensor_focus_pos* pos);
+k_s32 sensor_autofocus_dev_get_position(void *ctx, k_sensor_focus_pos* pos);
+k_s32 sensor_autofocus_dev_get_capability(void *ctx, k_sensor_autofocus_caps* caps);
+k_s32 sensor_autofocus_dev_power(void *ctx, int on_off);
+
+#endif /* _SENSOR_DEV_H_ */

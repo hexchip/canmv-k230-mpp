@@ -787,6 +787,80 @@ k_s32 sensor_priv_ioctl(struct sensor_driver_dev *dev, k_u32 cmd, void *args)
             }
             break;
         }
+        case KD_IOC_SENSOR_S_FOCUS_POINT:
+        {
+            k_sensor_focus_pos set_focus;
+            if (dev->sensor_func.sensor_set_focus_pos == NULL) {
+                rt_kprintf("%s (%s)sensor_set_focus_pos is null\n", __func__, dev->sensor_name);
+				return -1;
+			}
+
+            if (sizeof(set_focus) != lwp_get_from_user(&set_focus, args, sizeof(set_focus))){
+                rt_kprintf("%s:%d lwp_get_from_user err\n", __func__, __LINE__);
+                return -1;
+            }
+
+            ret = dev->sensor_func.sensor_set_focus_pos(dev, &set_focus);
+			break;
+        }
+        case KD_IOC_SENSOR_G_FOCUS_POINT:
+        {
+            k_sensor_focus_pos get_focus;
+            if (dev->sensor_func.sensor_get_focus_pos == NULL) {
+                rt_kprintf("%s (%s)sensor_get_focus_pos is null\n", __func__, dev->sensor_name);
+				return -1;
+			}
+
+            ret = dev->sensor_func.sensor_get_focus_pos(dev, &get_focus);
+            if (ret) {
+                rt_kprintf("%s (%s)sensor_get_focus_pos err\n", __func__, dev->sensor_name);
+                return -1;
+            }
+
+            if (sizeof(get_focus) != lwp_put_to_user(args, &get_focus, sizeof(get_focus))){
+                rt_kprintf("%s:%d lwp_put_to_user err\n", __func__, __LINE__);
+                return -1;
+            }
+
+			break;
+        }
+        case KD_IOC_SENSOR_G_FOCUS_CAP: {
+            k_sensor_autofocus_caps caps;
+
+            if (dev->sensor_func.sensor_get_foucs_cap == NULL) {
+                rt_kprintf("%s (%s)sensor_get_foucs_cap is null\n", __func__, dev->sensor_name);
+				return -1;
+			}
+
+            ret = dev->sensor_func.sensor_get_foucs_cap(dev, &caps);
+            if (ret) {
+                rt_kprintf("%s (%s)sensor_get_foucs_cap err\n", __func__, dev->sensor_name);
+                return -1;
+            }
+
+            if (sizeof(caps) != lwp_put_to_user(args, &caps, sizeof(caps))){
+                rt_kprintf("%s:%d lwp_put_to_user err\n", __func__, __LINE__);
+                return -1;
+            }
+
+			break;
+        }
+        case KD_IOC_SENSOR_S_FOCUS_POWER: {
+            int on_off = (int)(long)args;
+
+            if (dev->sensor_func.sensor_set_focus_power == NULL) {
+                rt_kprintf("%s (%s)sensor_set_focus_power is null\n", __func__, dev->sensor_name);
+				return -1;
+			}
+
+            ret = dev->sensor_func.sensor_set_focus_power(dev, on_off);
+            if (ret) {
+                rt_kprintf("%s (%s)sensor_set_focus_power err\n", __func__, dev->sensor_name);
+                return -1;
+            }
+
+            break;
+        }
     	default:
         {
             rt_kprintf("unsupported command 0x%08x\n", cmd);

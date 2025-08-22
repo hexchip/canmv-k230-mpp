@@ -710,6 +710,11 @@ static const k_sensor_function sensor_functions = {
     .sensor_get_expand_curve = sensor_get_expand_curve_impl,
     .sensor_get_otp_data = sensor_get_otp_data_impl,
     .sensor_mirror_set = sensor_mirror_set_impl,
+
+    .sensor_set_focus_pos = sensor_autofocus_dev_set_position,
+    .sensor_get_focus_pos = sensor_autofocus_dev_get_position,
+    .sensor_get_foucs_cap = sensor_autofocus_dev_get_capability,
+    .sensor_set_focus_power = sensor_autofocus_dev_power,
 };
 /*****************************************************************************/
 k_s32 sensor_imx335_probe(struct k_sensor_probe_cfg *cfg, struct sensor_driver_dev *dev)
@@ -780,6 +785,8 @@ k_s32 sensor_imx335_probe(struct k_sensor_probe_cfg *cfg, struct sensor_driver_d
     if (IMX355_CHIP_ID != chip_id) {
         rt_kprintf("TODO: imx335 read chip id maybe failed, 0x%04x != 0x%04x\n", IMX355_CHIP_ID, chip_id);
     }
+
+    sensor_autofocus_dev_probe(dev);
     /** NEW SENSOR MODIFY END */
 
     return 0;

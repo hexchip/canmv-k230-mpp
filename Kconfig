@@ -2,7 +2,7 @@
 menu "MPP Configuration"
     menu "Sensor Configuration"
 
-        choice MPP_DEFAULT_SENSOR_CSI_NUM
+        choice
                 bool "Default SENSOR on CSI"
                 default MPP_DEFAULT_SENSOR_CSI_0
 
@@ -14,13 +14,25 @@ menu "MPP Configuration"
                     bool "2"
         endchoice
 
-        comment "Sensor Hardware Configuration"
-
         config MPP_SENSOR_DEFAULT_CSI
             int
             default 0 if MPP_DEFAULT_SENSOR_CSI_0
             default 1 if MPP_DEFAULT_SENSOR_CSI_1
             default 2 if MPP_DEFAULT_SENSOR_CSI_2
+
+        comment "Sensor AutoFocus Drivers Configuration"
+
+        menuconfig  MPP_ENABLE_SENSOR_AF
+            bool "Enable AutoFocus"
+            default n
+
+            if MPP_ENABLE_SENSOR_AF
+                config MPP_ENABLE_SENSOR_AF_DRV_DW9714P
+                    bool "Enable Driver DW9714P"
+                    default n
+            endif
+
+        comment "Sensor Hardware Configuration"
 
         menuconfig MPP_ENABLE_CSI_DEV_0
             bool "Enable CSI0"

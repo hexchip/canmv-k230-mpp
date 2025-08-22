@@ -12,13 +12,16 @@ BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/kernel/$(CURRECT_DIR_NAME)
 LOCAL_CFLAGS = -I$(LOCAL_SRC_DIR)/src/ \
 			   -I$(RTSMART_SRC_DIR)/kernel/bsp/maix3/board/interdrv/gpio
 
-src-y := src/sensor_comm.c src/sensor_dev.c
+src-y := src/sensor_comm.c src/sensor_dev.c src/autofocus/sensor_autofocus.c
+
 src-$(CONFIG_MPP_ENABLE_SENSOR_GC2093) += src/gc2093/gc2093.c
 src-$(CONFIG_MPP_ENABLE_SENSOR_OV5647) += src/ov5647/ov5647.c
 src-$(CONFIG_MPP_ENABLE_SENSOR_IMX335) += src/imx335/imx335.c
 src-$(CONFIG_MPP_ENABLE_SENSOR_SC132GS) += src/sc132gs/sc132gs.c
 src-$(CONFIG_MPP_ENABLE_SENSOR_XS9950) += src/xs9950/xs9950.c
 src-$(CONFIG_MPP_ENABLE_SENSOR_BF3238) += src/bf3238/bf3238.c
+
+src-$(CONFIG_MPP_ENABLE_SENSOR_AF_DRV_DW9714P) += src/autofocus/af_dw9714p.c
 
 COBJS 	:= $(patsubst %, $(BUILD)/%, $(src-y:.c=.o))
 CDEPS 	:= $(patsubst %, $(BUILD)/%, $(src-y:.c=.o.d))

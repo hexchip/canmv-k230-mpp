@@ -664,6 +664,13 @@ typedef struct {
     k_u32 pos;
 } k_sensor_focus_pos;
 
+typedef struct {
+    k_s32 isSupport;
+
+    k_u32 minPos;
+    k_u32 maxPos;
+    k_u32 minStep;
+} k_sensor_autofocus_caps;
 
 #ifdef __cplusplus
 }

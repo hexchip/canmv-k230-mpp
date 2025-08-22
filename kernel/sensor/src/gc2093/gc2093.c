@@ -792,6 +792,11 @@ static const k_sensor_function sensor_functions = {
     .sensor_get_expand_curve = sensor_get_expand_curve_impl,
     .sensor_get_otp_data = sensor_get_otp_data_impl,
     .sensor_mirror_set = sensor_mirror_set_impl,
+
+    .sensor_set_focus_pos = sensor_autofocus_dev_set_position,
+    .sensor_get_focus_pos = sensor_autofocus_dev_get_position,
+    .sensor_get_foucs_cap = sensor_autofocus_dev_get_capability,
+    .sensor_set_focus_power = sensor_autofocus_dev_power,
 };
 /*****************************************************************************/
 k_s32 sensor_gc2093_probe(struct k_sensor_probe_cfg *cfg, struct sensor_driver_dev *dev)
@@ -863,6 +868,8 @@ k_s32 sensor_gc2093_probe(struct k_sensor_probe_cfg *cfg, struct sensor_driver_d
             goto _on_failed;
         }
     }
+
+    sensor_autofocus_dev_probe(dev);
     /** NEW SENSOR MODIFY END */
 
     return 0;
