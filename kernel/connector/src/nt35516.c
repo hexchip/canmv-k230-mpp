@@ -32,13 +32,39 @@
 
 static void lcd_init(void)
 {
-    k_u8 param1[] = {0x11};
-    k_u8 param2[] = {0x29};
+    // Sequence A: set GRAM window to last 4 columns (536–539)
+    const k_u8 set_last4_cols[] = {
+        0x05, 10, 1, 0x11,
+        // Set column (x = 536 .. 539)
+        0x39, 0, 5, 0x2A, 0x02, 0x18, 0x02, 0x1B,
+        // Set page (y = 0 .. 959)
+        0x39, 0, 5, 0x2B, 0x00, 0x00, 0x03, 0xBF,
+        // Memory write
+        0x39, 0, 1, 0x2C,
+    };
 
-    connecter_dsi_send_pkg(param1, sizeof(param1));
-    connector_delay_us(150000);
-    connecter_dsi_send_pkg(param2, sizeof(param2));
-    connector_delay_us(10000);
+    // Sequence B: normal init, but active area = 0–535
+    const k_u8 lcd_init_seq[] = {
+        0x05, 10, 1, 0x11,
+        // Set column (x = 0 .. 535)
+        0x39, 0, 5, 0x2A, 0x00, 0x00, 0x02, 0x17,
+        // Set page (y = 0 .. 959)
+        0x39, 0, 5, 0x2B, 0x00, 0x00, 0x03, 0xBF,
+        // Memory write
+        0x05, 10, 1, 0x29,
+    };
+
+    // Step 1: prepare last 4 columns
+    connector_send_cmd(set_last4_cols, sizeof(set_last4_cols), K_FALSE);
+
+    uint8_t black_data[4] = {0x3C, 0x00, 0x00, 0x00};
+
+    for(int i = 0; i < (4 * 960); i++) {
+        connecter_dsi_send_pkg(black_data, 4);
+    }
+
+    // Step 3: run normal init with restricted active area
+    connector_send_cmd(lcd_init_seq, sizeof(lcd_init_seq), K_FALSE);
 }
 
 static void nt35516_power_reset(k_s32 on)

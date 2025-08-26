@@ -38,16 +38,17 @@
 #define PROTECTION_OFF_VAL 0xA3
 
 #define DLC_MCLK_SET_REG 0xA1
-// Byte2: 0000 DLC MCLK1 MCLK0 -> DLC=1, MCLK[1:0]=11 (default x1) => 0x0F
-#define DLC_MCLK_SET_VAL 0x0F
+// Byte2: 0000 DLC MCLK1 MCLK0 -> DLC=1, MCLK[1:0]=01 (default x1) => 0x0D
+#define DLC_MCLK_SET_VAL 0x0D
 
 #define T_SRC_SET_REG 0xF2
-// T_SRC[4:0] default value is 5'b=11111. Corresponds to a ~1.25ms step period.
-#define T_SRC_SET_VAL     0xF8
+// T_SRC[4:0] default value is 5'b=00000. Corresponds to a ~6.33ms step period.
+#define T_SRC_SET_VAL 0x00
+
 #define PROTECTION_ON_REG 0xDC
 #define PROTECTION_ON_VAL 0x51
 
-#define STEP_SIZE          50
+#define STEP_SIZE          20
 #define MOVEMENT_THRESHOLD (STEP_SIZE * 4)
 
 /* Low-level I2C transfer */
