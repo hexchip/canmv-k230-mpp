@@ -429,7 +429,7 @@ static int kd_mpi_calc_timings(k_connector_debugger_config *config, k_connector_
     }
 
     attr_vco = calc_vco(mipi_clock);
-    attr_hs_freq = get_hsfreqrange(mipi_clock);
+    attr_hs_freq = get_hsfreqrange(mipi_clock * 2);
 
     info->connector_name = "debugger";
     info->screen_test_mode = 0;
