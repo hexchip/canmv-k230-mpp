@@ -24,485 +24,142 @@
  */
 
 #include "connector_dev.h"
-#include "io.h"
 #include "drv_gpio.h"
-#include "k_vo_comm.h"
+#include "io.h"
 #include "k_connector_comm.h"
+#include "k_vo_comm.h"
 
 static void ili9806_480x800_init(k_u8 test_mode_en)
 {
-    {
-        uint8_t param[] = { 0xff, 0xff, 0x98, 0x06, 0x04, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x08, 0x10 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x21, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x30, 0x02 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x31, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x40, 0x16 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x41, 0x33 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x42, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x43, 0x85 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x44, 0x8b };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x45, 0x1b };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x50, 0x78 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x51, 0x78 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x52, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x53, 0x60 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x60, 0x07 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x61, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x62, 0x07 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x63, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xA0, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa1, 0x0b };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa2, 0x12 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa3, 0x0c };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa4, 0x05 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa5, 0x0c };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa6, 0x07 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa7, 0x16 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa8, 0x06 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xa9, 0x0a };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xaa, 0x0f };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xab, 0x06 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xac, 0x0e };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xad, 0x1a };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xae, 0x12 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xaf, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc0, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc1, 0x0b };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc2, 0x12 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc3, 0x0c };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc4, 0x05 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc5, 0x0c };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc6, 0x07 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc7, 0x16 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc8, 0x06 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xc9, 0x0a };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xca, 0x0f };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xcb, 0x06 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xcc, 0x0e };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xcd, 0x1a };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xce, 0x12 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xcf, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xff, 0xff, 0x98, 0x06, 0x04, 0x06 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x00, 0xa0 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x01, 0x05 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x02, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x03, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x04, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x05, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x06, 0x88 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x07, 0x04 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x08, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x09, 0x90 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x0a, 0x04 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x0b, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x0c, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x0d, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x0e, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x0f, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x10, 0x55 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x11, 0x50 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x12, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x13, 0x85 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x14, 0x85 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x15, 0xc0 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x16, 0x0b };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x17, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x18, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x19, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x1a, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x1b, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x1c, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x1d, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x20, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x21, 0x23 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x22, 0x45 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x23, 0x67 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x24, 0x01 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x25, 0x23 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x26, 0x45 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x27, 0x67 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x30, 0x02 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x31, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x32, 0x11 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x33, 0xaa };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x34, 0xbb };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x35, 0x66 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x36, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x37, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x38, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x39, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x3a, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x3b, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x3c, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x3d, 0x20 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x3e, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x3f, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x40, 0x22 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x53, 0x1a };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xff, 0xff, 0x98, 0x06, 0x04, 0x07 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x17, 0x12 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x21 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x02, 0x77 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0xff, 0xff, 0x98, 0x06, 0x04, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x35, 0x00 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-    }
-    {
-        uint8_t param[] = { 0x11 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-        rt_thread_mdelay(100);
-    }
-    {
-        uint8_t param[] = { 0x29 };
-        connecter_dsi_send_pkg(param, sizeof(param));
-        rt_thread_mdelay(100);
-    }
+    const k_u8 init_sequence[] = {
+        CONNECTOR_CMD_SEQUENCE(0x39, 0x00, 0xff, 0xff, 0x98, 0x06, 0x04, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x08, 0x10),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x21, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x30, 0x02),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x31, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x40, 0x16),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x41, 0x33),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x42, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x43, 0x85),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x44, 0x8b),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x45, 0x1b),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x50, 0x78),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x51, 0x78),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x52, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x53, 0x60),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x60, 0x07),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x61, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x62, 0x07),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x63, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xA0, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa1, 0x0b),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa2, 0x12),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa3, 0x0c),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa4, 0x05),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa5, 0x0c),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa6, 0x07),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa7, 0x16),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa8, 0x06),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xa9, 0x0a),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xaa, 0x0f),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xab, 0x06),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xac, 0x0e),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xad, 0x1a),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xae, 0x12),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xaf, 0x00),
+
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xB5, 127, 120, 20, 0), // VFP, VBP, HBP
+
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc0, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc1, 0x0b),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc2, 0x12),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc3, 0x0c),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc4, 0x05),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc5, 0x0c),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc6, 0x07),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc7, 0x16),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc8, 0x06),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xc9, 0x0a),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xca, 0x0f),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xcb, 0x06),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xcc, 0x0e),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xcd, 0x1a),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xce, 0x12),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xcf, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xff, 0xff, 0x98, 0x06, 0x04, 0x06),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x00, 0xa0),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x01, 0x05),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x02, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x03, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x04, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x05, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x06, 0x88),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x07, 0x04),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x08, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x09, 0x90),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x0a, 0x04),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x0b, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x0c, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x0d, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x0e, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x0f, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x10, 0x55),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x11, 0x50),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x12, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x13, 0x85),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x14, 0x85),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x15, 0xc0),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x16, 0x0b),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x17, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x18, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x19, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x1a, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x1b, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x1c, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x1d, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x20, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x21, 0x23),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x22, 0x45),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x23, 0x67),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x24, 0x01),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x25, 0x23),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x26, 0x45),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x27, 0x67),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x30, 0x02),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x31, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x32, 0x11),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x33, 0xaa),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x34, 0xbb),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x35, 0x66),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x36, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x37, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x38, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x39, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x3a, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x3b, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x3c, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x3d, 0x20),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x3e, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x3f, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x40, 0x22),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x53, 0x1a),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xff, 0xff, 0x98, 0x06, 0x04, 0x07),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x17, 0x12),
+        // CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x21, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x02, 0x77),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0xff, 0xff, 0x98, 0x06, 0x04, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 0x00, 0x35, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 100, 0x11, 0x00),
+        CONNECTOR_CMD_SEQUENCE(0x15, 10, 0x29, 0x00),
+    };
+
+    connector_send_cmd(init_sequence, sizeof(init_sequence), K_FALSE);
 }
 
 static void ili9806_power_reset(k_s32 on)
 {
     k_u8 rst_gpio;
-    if(0 > (rst_gpio = CONFIG_MPP_DSI_LCD_RESET_PIN)) {
+    if (0 > (rst_gpio = CONFIG_MPP_DSI_LCD_RESET_PIN)) {
         return;
     }
 
@@ -517,7 +174,7 @@ static void ili9806_power_reset(k_s32 on)
 static void ili9806_set_backlight(k_s32 on)
 {
     k_u8 backlight_gpio;
-    if(0 > (backlight_gpio = CONFIG_MPP_DSI_LCD_BACKLIGHT_PIN)) {
+    if (0 > (backlight_gpio = CONFIG_MPP_DSI_LCD_BACKLIGHT_PIN)) {
         return;
     }
 
@@ -530,7 +187,7 @@ static void ili9806_set_backlight(k_s32 on)
 
 static k_s32 ili9806_power_on(void* ctx, k_s32 on)
 {
-    k_s32 ret = 0;
+    k_s32                        ret = 0;
     struct connector_driver_dev* dev = ctx;
 
     if (on) {
@@ -556,10 +213,10 @@ static k_s32 ili9806_set_phy_freq(k_connectori_phy_attr* phy_attr)
 
     memset(&mipi_phy_attr, 0, sizeof(k_vo_mipi_phy_attr));
 
-    mipi_phy_attr.m = phy_attr->m;
-    mipi_phy_attr.n = phy_attr->n;
-    mipi_phy_attr.hs_freq = phy_attr->hs_freq;
-    mipi_phy_attr.voc = phy_attr->voc;
+    mipi_phy_attr.m           = phy_attr->m;
+    mipi_phy_attr.n           = phy_attr->n;
+    mipi_phy_attr.hs_freq     = phy_attr->hs_freq;
+    mipi_phy_attr.voc         = phy_attr->voc;
     mipi_phy_attr.phy_lan_num = K_DSI_4LAN;
     connector_set_phy_freq(&mipi_phy_attr);
 
@@ -568,13 +225,13 @@ static k_s32 ili9806_set_phy_freq(k_connectori_phy_attr* phy_attr)
 
 static k_s32 ili9806_dsi_resolution_init(k_connector_info* info)
 {
-    k_vo_dsi_attr attr;
+    k_vo_dsi_attr           attr;
     k_vo_display_resolution resolution;
 
     memset(&attr, 0, sizeof(k_vo_dsi_attr));
-    attr.lan_num = info->lan_num;
-    attr.cmd_mode = info->cmd_mode;
-    attr.lp_div = 8;
+    attr.lan_num   = info->lan_num;
+    attr.cmd_mode  = info->cmd_mode;
+    attr.lp_div    = 8;
     attr.work_mode = info->work_mode;
     memcpy(&resolution, &info->resolution, sizeof(k_vo_display_resolution));
     memcpy(&attr.resolution, &resolution, sizeof(k_vo_display_resolution));
@@ -596,10 +253,10 @@ static k_s32 ili9806_dsi_resolution_init(k_connector_info* info)
 static k_s32 ili9806_vo_resolution_init(k_vo_display_resolution* resolution, k_u32 bg_color, k_u32 intr_line)
 {
     k_vo_display_resolution vo_resolution;
-    k_vo_pub_attr attr;
+    k_vo_pub_attr           attr;
 
     memset(&attr, 0, sizeof(k_vo_pub_attr));
-    attr.bg_color = bg_color;
+    attr.bg_color  = bg_color;
     attr.intf_sync = K_VO_OUT_1080P30;
     attr.intf_type = K_VO_INTF_MIPI;
     attr.sync_info = resolution;
@@ -614,7 +271,7 @@ static k_s32 ili9806_vo_resolution_init(k_vo_display_resolution* resolution, k_u
 
 k_s32 ili9806_init(void* ctx, k_connector_info* info)
 {
-    k_s32 ret = 0;
+    k_s32                        ret = 0;
     struct connector_driver_dev* dev = ctx;
 
     if (info->pixclk_div != 0)
