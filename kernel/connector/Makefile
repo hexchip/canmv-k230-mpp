@@ -26,6 +26,7 @@ src-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9806) += src/ili9806.c
 src-$(CONFIG_MPP_DSI_ENABLE_LCD_ILI9881) += src/ili9881.c
 src-$(CONFIG_MPP_DSI_ENABLE_LCD_NT35516) += src/nt35516.c
 src-$(CONFIG_MPP_DSI_ENABLE_LCD_NT35532) += src/nt35532.c
+src-$(CONFIG_MPP_DSI_ENABLE_LCD_GC9503) += src/gc9503.c
 
 SRCS = $(wildcard *.c)
 COBJS 	:= $(patsubst %, $(BUILD)/%, $(src-y:.c=.o))

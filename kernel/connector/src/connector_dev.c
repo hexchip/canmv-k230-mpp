@@ -168,6 +168,9 @@ struct connector_driver_dev* connector_drv_list[] = {
     &nt35532_connector_drv,
 #endif // CONFIG_MPP_DSI_ENABLE_LCD_NT35532
 
+#ifdef CONFIG_MPP_DSI_ENABLE_LCD_GC9503
+    &gc9503_connector_drv,
+#endif // CONFIG_MPP_DSI_ENABLE_LCD_GC9503
     NULL,
 };
 

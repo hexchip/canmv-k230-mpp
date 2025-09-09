@@ -79,6 +79,7 @@ extern struct connector_driver_dev virtdev_connector_drv;
 extern struct connector_driver_dev ili9881c_connector_drv;
 extern struct connector_driver_dev nt35516_connector_drv;
 extern struct connector_driver_dev nt35532_connector_drv;
+extern struct connector_driver_dev gc9503_connector_drv;
 
 #if defined (CONFIG_MPP_ENABLE_DSI_DEBUGGER)
 extern struct connector_driver_dev debugger_connector_dev;

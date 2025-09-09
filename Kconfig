@@ -363,6 +363,10 @@ menu "MPP Configuration"
             bool "Enable LCD Display Panel Driver nt35532"
             default n
 
+        config MPP_DSI_ENABLE_LCD_GC9503
+            bool "Enable LCD Display Panel Driver gc9503"
+            default n
+
     endmenu
 
     menu "Middleware Configuration"
