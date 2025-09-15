@@ -539,7 +539,7 @@ int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     if(SENSOR_TYPE_MAX == sensor_type) {
         k_vicap_probe_config probe_cfg;
 
-        probe_cfg.csi_num = dev_chn + 1;
+        probe_cfg.csi_num = dev_chn;
         probe_cfg.width = 1920;
         probe_cfg.height = 1080;
         probe_cfg.fps = 30;

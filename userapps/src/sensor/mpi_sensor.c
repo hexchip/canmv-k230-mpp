@@ -1790,6 +1790,7 @@ k_s32 kd_mpi_sensor_adapt_get(k_vicap_probe_config *config, k_vicap_sensor_info 
     k_s32 ret = 0;
     k_s32 sensor_fd = -1;
 
+    k_u32 config_csi_num = 0;
     k_u32 sensor_info_count = 0;
 
     int last_sensor_open_failed = 0;
@@ -1807,10 +1808,12 @@ k_s32 kd_mpi_sensor_adapt_get(k_vicap_probe_config *config, k_vicap_sensor_info 
     memset(info, 0, sizeof(k_vicap_sensor_info));
     memset(&info_list[0], 0, sizeof(info_list));
 
+    config_csi_num = config->csi_num + 1; // convert type
+
     for(int idx = 0; sensor_info_list[idx].sensor_name; idx++) {
         p_sensor_info = &sensor_info_list[idx];
 
-        if(p_sensor_info->csi_num != config->csi_num) {
+        if(p_sensor_info->csi_num != config_csi_num) {
             continue;
         }
 
