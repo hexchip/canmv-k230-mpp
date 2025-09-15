@@ -61,6 +61,12 @@ extern "C" {
 
 #define VB_MAX_USER             VB_UID_BUTT     /**< The module ID for using the VB pool must be less than the value defined by this macro*/
 
+/* Round x up to the next multiple of a (a must be power of two) */
+#define VB_ALIGN_UP(x, a)   ( ((x) + ((a) - 1)) & ~((a) - 1) )
+
+/* Round x down to the previous multiple of a (a must be power of two) */
+#define VB_ALIGN_DOWN(x, a) ( (x) & ~((a) - 1) )
+
 /**
  * @brief Defines the enumeration type of the module ID that uses the VB pool.
  *

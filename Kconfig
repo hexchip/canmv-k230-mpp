@@ -568,7 +568,11 @@ menu "MPP Configuration"
                     default y
 
                 config MPP_ENABLE_USER_SAMPLES_SAMPLE_UVC
-                    bool "UVC Sample"
+                    bool "UVC Host Sample"
+                    default y
+
+                config MPP_ENABLE_USER_SAMPLES_SAMPLE_UVC_DEVICE
+                    bool "UVC Device Sample"
                     default y
 
                 config MPP_ENABLE_USER_SAMPLES_SAMPLE_JAMLINK

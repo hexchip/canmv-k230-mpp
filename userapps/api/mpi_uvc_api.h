@@ -33,7 +33,9 @@
 #ifndef __MPI_UVC_API_H__
 #define __MPI_UVC_API_H__
 
+#include <stdint.h>
 #include <unistd.h>
+
 #include "k_vdec_comm.h"
 #include "k_video_comm.h"
 
@@ -46,6 +48,9 @@ extern "C" {
 #define USBH_VIDEO_FORMAT_UNCOMPRESSED 0
 #define USBH_VIDEO_FORMAT_MJPEG        1
 
+///////////////////////////////////////////////////////////////////////////////
+// UVC Host ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 struct uvc_frame {
     unsigned int index;
     unsigned int reserve_1;
@@ -74,6 +79,27 @@ void uvc_exit();
 int uvc_get_devinfo(char *info, int len);
 int uvc_get_formats(struct uvc_format **fmts);
 void uvc_free_formats(struct uvc_format **fmts);
+
+///////////////////////////////////////////////////////////////////////////////
+// UVC Device /////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+int uvc_device_init(void);
+void uvc_device_deinit(void);
+
+int uvc_device_create_buffer_pool(uint32_t buffer_size, uint32_t buffer_count);
+
+int uvc_device_get_buf(uint32_t **buffer, uint32_t *max_size);
+int uvc_device_put_buf(uint32_t *buffer, uint32_t size);
+
+struct uvc_device_conf_t {
+    int frame_rate;
+};
+int uvc_device_conf(struct uvc_device_conf_t *cfg);
+
+int uvc_device_start();
+int uvc_device_stop();
+
+int uvc_device_get_state(int *opened);
 
 #ifdef __cplusplus
 }
