@@ -814,8 +814,8 @@ k_s32 sensor_ov5647_probe(struct k_sensor_probe_cfg *cfg, struct sensor_driver_d
 #if defined (CONFIG_MPP_ENABLE_CSI_DEV_2)
     if(0x02 == cfg->csi_num) {
         dev->mode_count = sizeof(sensor_csi2_mode_list) / sizeof(sensor_csi2_mode_list[0]);
-        dev->sensor_mode_list = &sensor_csi2_mode_list[0];
-        sensor_mode = &dev->sensor_mode_list[0];
+        dev->sensor_mode_list = &sensor_csi2_mode_list[4];
+        sensor_mode = &dev->sensor_mode_list[4];
     }
 #endif
 
