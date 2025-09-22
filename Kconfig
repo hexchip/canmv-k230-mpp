@@ -343,9 +343,15 @@ menu "MPP Configuration"
             bool "Enable LCD Display Panel Driver HX8399"
             default n
 
-        config MPP_DSI_ENABLE_LCD_ST7701
+        menuconfig MPP_DSI_ENABLE_LCD_ST7701
             bool "Enable LCD Display Panel Driver ST7701"
             default n
+
+            if MPP_DSI_ENABLE_LCD_ST7701
+                config MPP_DSI_ENABLE_LCD_ST7701_D200C2409V0
+                    bool "Use D200C2409V0"
+                    default n
+            endif
 
         config MPP_DSI_ENABLE_LCD_ILI9806
             bool "Enable LCD Display Panel Driver ili9806"
