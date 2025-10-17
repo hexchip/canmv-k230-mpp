@@ -471,13 +471,16 @@ int main(int argc, char **argv)
             goto err2;
         }
 
+        ret = kd_mpi_vdec_attach_vb_pool(ch,vdec_poolid);
+        if (ret) {
+            printf("kd_mpi_vdec_attach_vb_pool fail, ret = %d\n", ret);
+            goto err3;
+        }
+
         attr.pic_width = width;
         attr.pic_height = height;
-        attr.frame_buf_cnt = OUTPUT_BUF_CNT;
         attr.stream_buf_size = ALIGN_UP(width * height, 0x1000);
-        attr.frame_buf_size = attr.stream_buf_size * 2;
         attr.type = K_PT_JPEG;
-        attr.frame_buf_pool_id = vdec_poolid;
 
         ret = kd_mpi_vdec_create_chn(ch, &attr);
         if (ret) {
@@ -549,6 +552,7 @@ int main(int argc, char **argv)
 
     if (is_jpeg) {
         kd_mpi_vdec_stop_chn(ch);
+        kd_mpi_vdec_detach_vb_pool(ch);
         kd_mpi_vdec_destroy_chn(ch);
         vb_destroy_vdec_pool(vdec_poolid);
     }
@@ -560,6 +564,7 @@ int main(int argc, char **argv)
 err5:
     kd_mpi_vdec_stop_chn(ch);
 err4:
+    kd_mpi_vdec_detach_vb_pool(ch);
     kd_mpi_vdec_destroy_chn(ch);
 err3:
     vb_destroy_vdec_pool(vdec_poolid);

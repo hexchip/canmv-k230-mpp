@@ -1065,53 +1065,6 @@ k_s32 vo_layer_insert_frame_test(void)
     return 0;
 }
 
-k_vb_blk_handle vo_set_writeback_attr(k_vo_wbc_attr *attr, void **pic_vaddr)
-{
-    k_u64 phys_addr = 0;
-    k_u32 *virt_addr;
-    k_vb_blk_handle handle;
-    k_s32 size = 0;
-
-    if (attr == NULL)
-        return K_FALSE;
-
-    size = attr->target_size.width * attr->target_size.height * 3 / 2;
-
-    size = size + 4096;         // 强制4K ，后边得删了
-
-    printf("vb block size is %x \n", size);
-
-    handle = kd_mpi_vb_get_block(g_pool_id, size, NULL);
-    if (handle == VB_INVALID_HANDLE)
-    {
-        printf("%s get vb block error\n", __func__);
-        return K_FAILED;
-    }
-
-    phys_addr = kd_mpi_vb_handle_to_phyaddr(handle);
-    if (phys_addr == 0)
-    {
-        printf("%s get phys addr error\n", __func__);
-        return K_FAILED;
-    }
-
-    attr->y_phy_addr = phys_addr;
-
-    virt_addr = (k_u32 *)kd_mpi_sys_mmap(phys_addr, size);
-    // virt_addr = (k_u32 *)kd_mpi_sys_mmap_cached(phys_addr, size);
-    if (virt_addr == NULL)
-    {
-        printf("%s mmap error\n", __func__);
-        return K_FAILED;
-    }
-
-    *pic_vaddr = virt_addr;
-
-    printf("phys_addr is %lx \n", phys_addr);
-
-    return handle;
-}
-
 #define YUV_WB_PICTURE       "wbc_1080x1920_nv12.yuv"
 
 k_s32 vo_writeback_test(void)
@@ -1158,10 +1111,10 @@ k_s32 vo_writeback_test(void)
     // info.attr.out_size.width = 1080;//640;
     // info.attr.out_size.height = 1920;//480;
 
-    wb_attr.pixel_format = PIXEL_FORMAT_YVU_PLANAR_420;
-    wb_attr.target_size.width = 1080;
-    wb_attr.target_size.height = 1920;
-    wb_attr.stride = wb_attr.target_size.width;
+    wb_attr.pool_id = VB_INVALID_POOLID;
+    wb_attr.blk_cnt = 4;
+    wb_attr.dump_size.width = 1080;
+    wb_attr.dump_size.height = 1920;
 
     vo_creat_layer_test(chn_id, &info);
 
@@ -1177,7 +1130,6 @@ k_s32 vo_writeback_test(void)
     vf_info.v_frame.priv_data = K_VO_ONLY_CHANGE_PHYADDR;
 
     block = vo_insert_frame(&vf_info, &pic_vaddr);
-    block2 = vo_set_writeback_attr(&wb_attr, &wb_vaddr);
     k_u8 *yuv;
     k_u8 color = 0x10;
     k_u32 step = 1;
@@ -1206,7 +1158,6 @@ k_s32 vo_writeback_test(void)
 
     getchar();
 
-
     free(yuv);
 
     // disable wbc
@@ -1214,7 +1165,6 @@ k_s32 vo_writeback_test(void)
     // close plane
     kd_mpi_vo_disable_video_layer(chn_id);
     vo_release_frame(block);
-    vo_release_frame(block2);
     vo_release_private_poll();
     // fclose(fd);
     //exit ;

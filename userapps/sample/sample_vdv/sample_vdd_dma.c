@@ -81,7 +81,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
     return K_SUCCESS;
 }
 #endif
-int sample_vdd_dma_init()
+int sample_vdd_dma_init(k_u32 gdma_attach_pool_id)
 {
     k_s32 ret;
 
@@ -93,7 +93,7 @@ int sample_vdd_dma_init()
     dma_chn_attr_init(chn_attr);
 
     /************************************************************
-     * This part is the demo that actually starts to use DMA 
+     * This part is the demo that actually starts to use DMA
      ***********************************************************/
     ret = kd_mpi_dma_set_dev_attr(&dma_dev_attr);
     if (ret != K_SUCCESS) {
@@ -105,6 +105,17 @@ int sample_vdd_dma_init()
     if (ret != K_SUCCESS) {
         printf("start dev error\r\n");
         goto err_return;
+    }
+
+    dma_ch = kd_mpi_dma_request_chn(GDMA_TYPE);
+    if (dma_ch < 0) {
+        goto err_dma_dev;
+    }
+
+    ret = kd_mpi_dma_attach_vb_pool(dma_ch, gdma_attach_pool_id);
+    if (ret != K_SUCCESS) {
+        printf("dma attach vb_pool error\r\n");
+        goto err_dma_dev;
     }
 
     ret = kd_mpi_dma_set_chn_attr(DMA_CHN0, &chn_attr[DMA_CHN0]);
@@ -121,7 +132,7 @@ int sample_vdd_dma_init()
     return K_SUCCESS;
 
     /************************************************************
-     * This part is used to stop the DMA 
+     * This part is used to stop the DMA
      ***********************************************************/
     ret = kd_mpi_dma_stop_chn(DMA_CHN0);
     if (ret != K_SUCCESS) {
@@ -146,12 +157,14 @@ int sample_vdd_dma_delete()
     k_s32 ret;
 
     /************************************************************
-     * This part is used to stop the DMA 
+     * This part is used to stop the DMA
      ***********************************************************/
     ret = kd_mpi_dma_stop_chn(DMA_CHN0);
     if (ret != K_SUCCESS) {
         printf("stop chn error\r\n");
     }
+
+    kd_mpi_dma_detach_vb_pool(DMA_CHN0);
 
     if (dma_ch >= 0)
         kd_mpi_dma_release_chn(dma_ch);

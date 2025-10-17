@@ -280,16 +280,10 @@ typedef struct
 
 } k_vo_user_sync_info;
 
-typedef struct
-{
-
-    k_vo_size target_size;
-    k_pixel_format pixel_format;
-    k_u32 stride;
-    k_u32 y_phy_addr;
-
+typedef struct {
+    k_u32 blk_cnt;     // Number of VB blocks to allocate in the pool
+    k_vo_size dump_size; // The rectangular area (width/height) of the VO output to capture.
 } k_vo_wbc_attr;
-
 
 typedef struct
 {

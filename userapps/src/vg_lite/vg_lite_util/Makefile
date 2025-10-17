@@ -24,19 +24,19 @@ DEPS := $(CDEPS) $(CPP_DEPS)
 
 .PHONY: all
 all: $(LIB)
-	@echo "Make lib$(CURRECT_DIR_NAME) done."
+	@echo "Make mpp userapps lib$(CURRECT_DIR_NAME) done."
 
 .PHONY: clean
 clean:
-	@rm -rf $(LIB) $(OBJS) $(DEPS)
+	$(Q)rm -rf $(LIB) $(OBJS) $(DEPS)
 
 $(LIB): $(OBJS)
 	@echo "AR $@"
-	@$(AR) $(ARFLAGS) $@ $^
+	$(Q)$(AR) $(ARFLAGS) $@ $^
 
 $(OBJS): $(BUILD)/%.o : %.c
-	@echo [CC] $<
-	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
+	@echo "CC $<"
+	$(Q)$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 # $(sort $(var)) removes duplicates
 #
@@ -46,6 +46,6 @@ $(OBJS): $(BUILD)/%.o : %.c
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 $(OBJS): | $(OBJ_DIRS)
 $(OBJ_DIRS):
-	@mkdir -p $@
+	$(Q)mkdir -p $@
 
 -include $(DEPS)

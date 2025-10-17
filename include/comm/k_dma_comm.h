@@ -136,6 +136,8 @@ typedef enum
 
     /* SVP data format */
     DMA_PIXEL_FORMAT_BGR_888_PLANAR,
+
+    DMA_PIXEL_FORMAT_BUTT,
 } k_pixel_format_dma_e;
 
 /**

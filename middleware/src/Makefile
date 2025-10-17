@@ -15,8 +15,8 @@ dir-$(CONFIG_MPP_ENABLE_MIDDLEWARE_LIB_RTSP_PUSHER)	+= rtsp_pusher
 dirs := $(dir-y)
 
 all:
-	@rm -rf $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/*
-	@$(foreach dir,$(dirs), \
+	$(Q)rm -rf $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/*
+	$(Q)$(foreach dir,$(dirs), \
 		$(MAKE) -C $(dir) all || exit $?; \
 		if [ "$(dir)" = "ffmpeg/src" ] || [ "$(dir)" = "x264/src" ]; then \
 			$(MAKE) -C $(dir) install || exit $?; \
@@ -26,8 +26,8 @@ all:
 	@echo "Make MPP middleware libraries done."
 
 clean:
-	@rm -rf $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/*
-	@$(foreach dir,$(dirs),$(MAKE) -C $(dir) clean || exit $?;)
+	$(Q)rm -rf $(MPP_MIDDLEWARE_LIB_INSTALL_PATH)/*
+	$(Q)$(foreach dir,$(dirs),$(MAKE) -C $(dir) clean || exit $?;)
 	@echo "Clean MPP middleware libraries done."
 
 .PHONY: all clean

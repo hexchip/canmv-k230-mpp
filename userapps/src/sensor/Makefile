@@ -24,30 +24,30 @@ DWCFGS = $(patsubst %.yml,%.bin,$(YMLS))
 
 .PHONY: k230dwmapgen
 k230dwmapgen:
-	@cmake -S $(LOCAL_SRC_DIR)/dewarp/k230dwmapgen -B $(BUILD)/dewrap
-	@cmake --build $(BUILD)/dewrap -j
+	$(Q)cmake -S $(LOCAL_SRC_DIR)/dewarp/k230dwmapgen -B $(BUILD)/dewrap
+	$(Q)cmake --build $(BUILD)/dewrap -j
 
 $(DWCFGS): %.bin : %.yml k230dwmapgen
-	@$(BUILD)/dewrap/k230dwmapgen-dump < $< > $@
+	$(Q)$(BUILD)/dewrap/k230dwmapgen-dump < $< > $@
 
 .PHONY: all
 all: $(LIB) $(DWCFGS)
-	@mkdir -p $(RTSMART_SRC_DIR)/userapps/root/bin/
-	@cp $(LOCAL_SRC_DIR)/config/* $(RTSMART_SRC_DIR)/userapps/root/bin/
-	@cp $(LOCAL_SRC_DIR)/dewarp/*.bin $(RTSMART_SRC_DIR)/userapps/root/bin/
-	@echo "Make lib$(CURRECT_DIR_NAME) done."
+	$(Q)mkdir -p $(RTSMART_SRC_DIR)/userapps/root/bin/
+	$(Q)cp $(LOCAL_SRC_DIR)/config/* $(RTSMART_SRC_DIR)/userapps/root/bin/
+	$(Q)cp $(LOCAL_SRC_DIR)/dewarp/*.bin $(RTSMART_SRC_DIR)/userapps/root/bin/
+	@echo "Make mpp userapps lib$(CURRECT_DIR_NAME) done."
 
 .PHONY: clean
 clean:
-	@rm -rf $(LIB) $(OBJS) $(DEPS)
+	$(Q)rm -rf $(LIB) $(OBJS) $(DEPS)
 
 $(LIB): $(OBJS)
 	@echo "AR $@"
-	@$(AR) $(ARFLAGS) $@ $^
+	$(Q)$(AR) $(ARFLAGS) $@ $^
 
 $(OBJS): $(BUILD)/%.o : %.c
-	@echo [CC] $<
-	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
+	@echo "CC $<"
+	$(Q)$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 # $(sort $(var)) removes duplicates
 #
@@ -57,6 +57,6 @@ $(OBJS): $(BUILD)/%.o : %.c
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 $(OBJS): | $(OBJ_DIRS)
 $(OBJ_DIRS):
-	@mkdir -p $@
+	$(Q)mkdir -p $@
 
 -include $(DEPS)

@@ -37,18 +37,18 @@ all: $(LIB)
 
 $(COBJS): $(BUILD)/%.o : %.c
 	@echo [CC] $@
-	@$(CC) $(CC_CFLAGS_EX) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CC) $(CC_CFLAGS_EX) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 $(CPP_OBJS): $(BUILD)/%.o : %.cpp
 	@echo [CXX] $@
-	@$(CPP) $(CC_CFLAGS_EX) $(CXX_FLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CPP) $(CC_CFLAGS_EX) $(CXX_FLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 $(LIB): $(OBJS)
 	@echo [LD] $@
-	@$(AR) $(ARFLAGS) $@ $^
+	$(Q)$(AR) $(ARFLAGS) $@ $^
 
 clean:
-	@rm -rf $(LIB) $(OBJS) $(DEPS)
+	$(Q)rm -rf $(LIB) $(OBJS) $(DEPS)
 
 .PHONY: all clean
 
@@ -60,6 +60,6 @@ clean:
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 $(OBJS): | $(OBJ_DIRS)
 $(OBJ_DIRS):
-	@mkdir -p $@
+	$(Q)mkdir -p $@
 
 -include $(DEPS)

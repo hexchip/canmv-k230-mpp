@@ -83,6 +83,8 @@ k_video_frame_info df_info[DMA_MAX_CHN_NUMS];
 k_u32 gdma_size[4] = {0, 0, 0, 0};
 k_bool g_end = K_FALSE;
 static k_s32 dma_ch[2] = { -1, -1 };
+static k_u32 dma_attach_pool_id[DMA_MAX_CHN_NUMS] = {VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID,
+                                     VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID};
 
 k_video_frame_info insert_pic_info[2];
 
@@ -127,7 +129,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
 
     /* channel 0 */
     gdma_attr = &attr[0].gdma_attr;
-    gdma_attr->buffer_num = 3;
+    gdma_attr->buffer_num = DMA_BUFF_NUM;
     gdma_attr->rotation = DEGREE_90;
     gdma_attr->x_mirror = K_FALSE;
     gdma_attr->y_mirror = K_FALSE;
@@ -140,7 +142,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
 
     /* channel 1 */
     gdma_attr = &attr[1].gdma_attr;
-    gdma_attr->buffer_num = 3;
+    gdma_attr->buffer_num = DMA_BUFF_NUM;
     gdma_attr->rotation = DEGREE_180;
     gdma_attr->x_mirror = K_FALSE;
     gdma_attr->y_mirror = K_FALSE;
@@ -193,20 +195,20 @@ static k_s32 dma_chn_data_init(k_s32 chn_num, k_dma_chn_attr_u *attr, k_video_fr
     return K_SUCCESS;
 }
 
-static k_s32 dma_vb_init(k_dma_chn_attr_u attr[8], k_u8 planar[8])
+static k_s32 dma_vb_create_pool(k_dma_chn_attr_u attr[8], k_u8 planar[8])
 {
-    k_s32 ret;
-    k_vb_config config;
     k_s32 i;
     k_gdma_chn_attr_t *gdma_attr;
     k_s32 size, size_v, size_h;
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
 
-    memset(&config, 0, sizeof(config));
-    config.max_pool_cnt = 64;
     for (i = 0; i < DMA_MAX_CHN_NUMS; i++)
     {
         if (planar[i] == 0)
             continue;
+
+        memset(&pool_config, 0, sizeof(pool_config));
 
         if (i < GDMA_MAX_CHN_NUMS)
         {
@@ -225,19 +227,35 @@ static k_s32 dma_vb_init(k_dma_chn_attr_u attr[8], k_u8 planar[8])
 
             if (i == DMA_CHN0)
             {
-                config.comm_pool[i].blk_cnt = (DMA_BUFF_NUM + 2);
-                config.comm_pool[i].mode = VB_REMAP_MODE_NOCACHE;
-                config.comm_pool[i].blk_size = size;
+                pool_config.blk_cnt = (DMA_BUFF_NUM + 1);
+                pool_config.blk_size = size;
+                pool_config.mode = VB_REMAP_MODE_NOCACHE;
             }
             else if (i == DMA_CHN1)
             {
-                config.comm_pool[i].blk_cnt = (DMA_BUFF_NUM + 2);
-                config.comm_pool[i].mode = VB_REMAP_MODE_NOCACHE;
-                config.comm_pool[i].blk_size = size;
+                pool_config.blk_cnt = (DMA_BUFF_NUM + 1);
+                pool_config.blk_size = size;
+                pool_config.mode = VB_REMAP_MODE_NOCACHE;
             }
-            gdma_size[i] = config.comm_pool[i].blk_size;
         }
+
+        private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+        printf("%s dma chn %d,poolid %d\n", __func__,i,private_pool_id);
+        dma_attach_pool_id[i] = private_pool_id;
     }
+
+
+    return K_SUCCESS;
+}
+
+
+static k_s32 dma_vb_init(k_dma_chn_attr_u attr[8], k_u8 planar[8])
+{
+    k_s32 ret;
+    k_vb_config config;
+
+    memset(&config, 0, sizeof(config));
+    config.max_pool_cnt = 64;
     ret = kd_mpi_vb_set_config(&config);
     printf("\n");
     printf("---------------------dma sample test---------------------\n");
@@ -272,7 +290,7 @@ static k_s32 sample_dma_get_blk(k_s32 size, k_video_frame_info *df_info, k_u8 ch
     k_u64 phys_addr = 0;
     k_u8 *virt_addr = NULL;
 
-    handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, size, NULL);
+    handle = kd_mpi_vb_get_block(dma_attach_pool_id[chn_num], size, NULL);
     if (handle == VB_INVALID_HANDLE)
     {
         printf("%s get vb block error\n", __func__);
@@ -532,6 +550,11 @@ int main(void)
         return -1;
     }
 
+    if (dma_vb_create_pool(chn_attr, planar))
+    {
+        return -1;
+    }
+
     sample_dma_prepare_data(chn_attr, planar, df_info);
 
     ret = sample_vvi_bind_gdma();
@@ -565,6 +588,12 @@ int main(void)
     }
 #if 1
     /* DMA_CHN0 prepare */
+    ret = kd_mpi_dma_attach_vb_pool(dma_ch[DMA_CHN0], dma_attach_pool_id[DMA_CHN0]);
+    if (ret != K_SUCCESS)
+    {
+        printf("dma attach vb_pool error\r\n");
+        goto exit_label;
+    }
     ret = kd_mpi_dma_set_chn_attr(dma_ch[DMA_CHN0], &chn_attr[DMA_CHN0]);
     if (ret != K_SUCCESS)
     {
@@ -582,6 +611,12 @@ int main(void)
 
 #if 1
     /* DMA_CHN1 prepare */
+    ret = kd_mpi_dma_attach_vb_pool(dma_ch[DMA_CHN1], dma_attach_pool_id[DMA_CHN1]);
+    if (ret != K_SUCCESS)
+    {
+        printf("dma attach vb_pool error\r\n");
+        goto exit_label;
+    }
     ret = kd_mpi_dma_set_chn_attr(dma_ch[DMA_CHN1], &chn_attr[DMA_CHN1]);
     if (ret != K_SUCCESS)
     {
@@ -621,6 +656,9 @@ int main(void)
 
     sample_vvi_stop(g_pipe_conf);
 
+    kd_mpi_dma_detach_vb_pool(DMA_CHN0);
+    kd_mpi_dma_detach_vb_pool(DMA_CHN1);
+
     ret = kd_mpi_dma_stop_dev();
     if (ret != K_SUCCESS)
     {
@@ -632,6 +670,13 @@ int main(void)
 
 exit_label:
     sample_dma_release_data(chn_attr, planar, df_info);
+
+    for (int i = 0; i < 8;i ++){
+        if (dma_attach_pool_id[i] != VB_INVALID_POOLID) {
+            kd_mpi_vb_destory_pool(dma_attach_pool_id[i]);
+            dma_attach_pool_id[i] = VB_INVALID_POOLID;
+        }
+    }
 
     dma_vb_exit();
     for (int i = 0; i < 2; i++) {

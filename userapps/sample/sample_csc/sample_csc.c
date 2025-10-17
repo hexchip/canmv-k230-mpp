@@ -88,6 +88,9 @@ extern const int osd_data_size;
 static k_u8 *dump_buf_rgb888=NULL;
 static k_u8 *dump_buf_rgb565=NULL;
 static k_bool vicap_started=K_FALSE;
+static k_u32 venc_attach_pool_id = 0;
+static k_u32 nonai_2d_attach_pool_id[3] = {0};
+static k_u32 osd_attach_pool_id = 0;
 
 static inline void CHECK_RET(k_s32 ret, const char *func, const int line)
 {
@@ -243,35 +246,83 @@ void sample_vicap_stop()
     CHECK_RET(ret, __func__, __LINE__);
 }
 
+static k_u32 venc_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = VENC_BUF_CNT;
+    pool_config.blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height/2, 0x1000);
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_u32 nonai_2d_vb_create_pool(int chn)
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+
+
+    if (chn == 0){
+        pool_config.blk_cnt =  NONAI_2D_BUF_CNT;
+        pool_config.blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3, 0x1000);
+    }
+    else if (chn == 1){
+        pool_config.blk_cnt =  NONAI_2D_BUF_CNT;
+        pool_config.blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3/2, 0x1000);
+    }
+    else if (chn == 2){
+        pool_config.blk_cnt =  NONAI_2D_BUF_CNT;
+        pool_config.blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*2, 0x1000);
+    }
+    else{
+        return -1;
+    }
+
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s nonai_2d chn:%d, poolid %d\n", __func__,chn,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_u32 osd_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = OSD_BUF_CNT;
+    pool_config.blk_size = OSD_BUF_SIZE;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_s32 vb_destory_pool(k_u32 pool_id)
+{
+    kd_mpi_vb_destory_pool(pool_id);
+    return 0;
+}
+
 static k_s32 sample_vb_init()
 {
     k_s32 ret;
     k_vb_config config;
 
     memset(&config, 0, sizeof(config));
-    config.max_pool_cnt = 7;
+    config.max_pool_cnt = 64;
     config.comm_pool[0].blk_cnt = VICAP_BUF_CNT;
     config.comm_pool[0].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3, 0x1000);
     config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
     config.comm_pool[1].blk_cnt = VICAP_BUF_CNT;
     config.comm_pool[1].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3/2, 0x1000);
     config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[2].blk_cnt = NONAI_2D_BUF_CNT;
-    config.comm_pool[2].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3, 0x1000);
-    config.comm_pool[2].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[3].blk_cnt = NONAI_2D_BUF_CNT;
-    config.comm_pool[3].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3/2, 0x1000);
-    config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[4].blk_cnt = NONAI_2D_BUF_CNT;
-    config.comm_pool[4].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*2, 0x1000);
-    config.comm_pool[4].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[5].blk_cnt = OSD_BUF_CNT;
-    config.comm_pool[5].blk_size = OSD_BUF_SIZE;
-    config.comm_pool[5].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[6].blk_cnt = VENC_BUF_CNT;
-    config.comm_pool[6].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height/2, 0x1000);
-    config.comm_pool[6].mode = VB_REMAP_MODE_NOCACHE;
-
 
     ret = kd_mpi_vb_set_config(&config);
 
@@ -301,7 +352,7 @@ static k_s32 prepare_osd()
     k_u64 phys_addr = 0;
     k_u8 *virt_addr_osd;
 
-    handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, OSD_BUF_SIZE, NULL);
+    handle = kd_mpi_vb_get_block(osd_attach_pool_id, OSD_BUF_SIZE, NULL);
 
     if (handle == VB_INVALID_HANDLE)
     {
@@ -636,14 +687,18 @@ k_s32 sample_exit()
     kd_mpi_vo_disable_video_layer(K_VO_LAYER1);
 
     kd_mpi_nonai_2d_stop_chn(NONAI_2D_RGB888_CH);
+    kd_mpi_nonai_2d_detach_vb_pool(NONAI_2D_RGB888_CH);
     kd_mpi_nonai_2d_destroy_chn(NONAI_2D_RGB888_CH);
     kd_mpi_nonai_2d_stop_chn(NONAI_2D_BIND_CH);
+    kd_mpi_nonai_2d_detach_vb_pool(NONAI_2D_BIND_CH);
     kd_mpi_nonai_2d_destroy_chn(NONAI_2D_BIND_CH);
     kd_mpi_nonai_2d_stop_chn(NONAI_2D_RGB565_CH);
+    kd_mpi_nonai_2d_detach_vb_pool(NONAI_2D_RGB565_CH);
     kd_mpi_nonai_2d_destroy_chn(NONAI_2D_RGB565_CH);
 
     kd_mpi_venc_detach_2d(ch);
     kd_mpi_venc_stop_chn(ch);
+    kd_mpi_venc_detach_vb_pool(ch);
     kd_mpi_venc_destroy_chn(ch);
 
     sample_unbind(ch);
@@ -665,6 +720,10 @@ k_s32 sample_exit()
 
     ret = kd_mpi_vb_release_block(g_nonai_2d_conf.osd_blk_handle);
     CHECK_RET(ret, __func__, __LINE__);
+
+    vb_destory_pool(venc_attach_pool_id);
+
+    vb_destory_pool(osd_attach_pool_id);
 
     sample_vb_exit();
 
@@ -689,11 +748,12 @@ static k_s32 sample_venc_osd_h265()
     k_venc_2d_border_attr venc_2d_border_attr;
     int index;
 
+    venc_attach_pool_id = venc_vb_create_pool();
+    kd_mpi_venc_attach_vb_pool(ch,venc_attach_pool_id);
+
     memset(&attr, 0, sizeof(attr));
     attr.venc_attr.pic_width = width;
     attr.venc_attr.pic_height = height;
-    attr.venc_attr.stream_buf_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height/2, 0x1000);
-    attr.venc_attr.stream_buf_cnt = VENC_BUF_CNT;
 
     attr.rc_attr.rc_mode = rc_mode;
     attr.rc_attr.cbr.src_frame_rate = 30;
@@ -716,6 +776,7 @@ static k_s32 sample_venc_osd_h265()
     ret = kd_mpi_venc_set_2d_mode(ch, K_VENC_2D_CALC_MODE_OSD_BORDER);
     CHECK_RET(ret, __func__, __LINE__);
 
+    osd_attach_pool_id = osd_vb_create_pool();
     prepare_osd();
 
     index = 0;
@@ -754,6 +815,11 @@ static void sample_nonai_2d()
     k_s32 ret;
     k_nonai_2d_chn_attr attr_2d;
 
+    nonai_2d_attach_pool_id[NONAI_2D_BIND_CH] = nonai_2d_vb_create_pool(NONAI_2D_BIND_CH);
+    nonai_2d_attach_pool_id[NONAI_2D_RGB888_CH] = nonai_2d_vb_create_pool(NONAI_2D_RGB888_CH);
+    nonai_2d_attach_pool_id[NONAI_2D_RGB565_CH] = nonai_2d_vb_create_pool(NONAI_2D_RGB565_CH);
+
+    kd_mpi_nonai_2d_attach_vb_pool(NONAI_2D_BIND_CH,nonai_2d_attach_pool_id[NONAI_2D_BIND_CH]);
     attr_2d.mode = K_NONAI_2D_CALC_MODE_CSC;
     attr_2d.dst_fmt = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
     ret = kd_mpi_nonai_2d_create_chn(NONAI_2D_BIND_CH, &attr_2d);
@@ -762,6 +828,7 @@ static void sample_nonai_2d()
     ret = kd_mpi_nonai_2d_start_chn(NONAI_2D_BIND_CH);
     CHECK_RET(ret, __func__, __LINE__);
 
+    kd_mpi_nonai_2d_attach_vb_pool(NONAI_2D_RGB888_CH,nonai_2d_attach_pool_id[NONAI_2D_RGB888_CH]);
     attr_2d.mode = K_NONAI_2D_CALC_MODE_CSC;
     attr_2d.dst_fmt = PIXEL_FORMAT_RGB_888_PLANAR;
     ret = kd_mpi_nonai_2d_create_chn(NONAI_2D_RGB888_CH, &attr_2d);
@@ -770,6 +837,8 @@ static void sample_nonai_2d()
     ret = kd_mpi_nonai_2d_start_chn(NONAI_2D_RGB888_CH);
     CHECK_RET(ret, __func__, __LINE__);
 
+
+    kd_mpi_nonai_2d_attach_vb_pool(NONAI_2D_RGB565_CH,nonai_2d_attach_pool_id[NONAI_2D_RGB565_CH]);
     attr_2d.mode = K_NONAI_2D_CALC_MODE_CSC;
     attr_2d.dst_fmt = PIXEL_FORMAT_RGB_565;
     ret = kd_mpi_nonai_2d_create_chn(NONAI_2D_RGB565_CH, &attr_2d);
@@ -820,7 +889,7 @@ int main(int argc, char *argv[])
     g_nonai_2d_conf.width = 1280;
     g_nonai_2d_conf.height = 720;
     g_nonai_2d_conf.sensor_type = sensor_type;
-    g_nonai_2d_conf.vo = HX8377_V2_MIPI_4LAN_1080X1920_30FPS;
+    g_nonai_2d_conf.vo = LT9611_MIPI_4LAN_1920X1080_30FPS;
 
     for (int i = 1; i < argc; i++)
     {
@@ -871,7 +940,7 @@ int main(int argc, char *argv[])
         if(g_nonai_2d_conf.output_file)
         {
             size = ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3;
-            output_file = fopen("/sharefs/out_2d_rgb888.rgb", "wb");
+            output_file = fopen("/data/out_2d_rgb888.rgb", "wb");
             fwrite(dump_buf_rgb888, 1, size, output_file);
             fclose(output_file);
             printf("write 2D rgb888 output done\n");
@@ -884,7 +953,7 @@ int main(int argc, char *argv[])
         if(g_nonai_2d_conf.output_file)
         {
             size = ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 2;
-            output_file = fopen("/sharefs/out_2d_rgb565.rgb", "wb");
+            output_file = fopen("/data/out_2d_rgb565.rgb", "wb");
             fwrite(dump_buf_rgb565, 1, size, output_file);
             fclose(output_file);
             printf("write 2D rgb565 output done\n");

@@ -579,6 +579,10 @@ menu "MPP Configuration"
                     bool "Jamlink Sample"
                     default y
 
+                config MPP_ENABLE_USER_SAMPLES_SAMPLE_WBC_DUMP
+                    bool "VO WBC Dump Sample"
+                    default y
+
             endif
 
         menuconfig MPP_ENABLE_MIDDLEWARE_SAMPLES

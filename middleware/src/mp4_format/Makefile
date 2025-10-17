@@ -39,14 +39,14 @@ all:$(LIB)
 
 $(OBJS) : $(BUILD)/%.o: %.c
 	@echo [CC] $@
-	@$(CC) -c -fPIC $(CFLAGS) $< -o $@ $(INCS)  $(DEFINE) -MD -MP -MF $@.d
+	$(Q)$(CC) -c -fPIC $(CFLAGS) $< -o $@ $(INCS)  $(DEFINE) -MD -MP -MF $@.d
 
 $(LIB) : $(OBJS)
 	@echo [LD] $@
-	@$(AR) $(ARFLAGS) $@ $^
+	$(Q)$(AR) $(ARFLAGS) $@ $^
 
 clean:
-	@rm -f $(LIB) $(OBJS) $(DEPS)
+	$(Q)rm -f $(LIB) $(OBJS) $(DEPS)
 
 .PHONY: all clean
 
@@ -58,6 +58,6 @@ clean:
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 $(OBJS): | $(OBJ_DIRS)
 $(OBJ_DIRS):
-	@mkdir -p $@
+	$(Q)mkdir -p $@
 
 -include $(DEPS)

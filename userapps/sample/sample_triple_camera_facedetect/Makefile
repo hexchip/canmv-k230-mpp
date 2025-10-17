@@ -7,12 +7,12 @@ CURRECT_DIR_NAME=$(shell basename `pwd`)
 BUILD := $(SDK_RTSMART_BUILD_DIR)/mpp/userapps/sample/$(CURRECT_DIR_NAME)
 
 all:
-	@mkdir -p $(BUILD)
-	@cmake -S . -B $(BUILD)
-	@cmake --build $(BUILD)
-	@cmake --install $(BUILD)
+	$(Q)mkdir -p $(BUILD)
+	$(Q)cmake -S . -B $(BUILD)
+	$(Q)cmake --build $(BUILD)
+	$(Q)cmake --install $(BUILD)
 
 clean:
-	@rm -rf $(BUILD)
+	$(Q)rm -rf $(BUILD)
 
 .PHONY: all clean

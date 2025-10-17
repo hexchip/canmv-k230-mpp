@@ -82,6 +82,21 @@ static volatile k_bool g_enable_audio_codec = K_FALSE;
 
 static volatile uint32_t g_audioout_timestamp_end = 0;
 static volatile uint32_t g_audioout_timestamp_last = 0;
+static k_u32 g_audio_data_pool_id = VB_INVALID_HANDLE;
+
+static k_u32 audio_data_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = 4;
+    pool_config.blk_size = 48000*4*2;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
 
 static int _enable_audio3a(int ai_dev_num, int ai_channel,k_audio_bit_width bit_width,int enable_audio3a)
 {
@@ -213,7 +228,7 @@ static void _test_ai_i2s_in_data(const char *filename, int dev_num, int channel,
     int nSec = 0;
 
 #if ENABLE_SAVE_PCM
-    audio_save_init(filename, sample_rate, channel_count, bit_width, SAVE_PCM_SECOND);
+    audio_save_init(filename, sample_rate, channel_count, bit_width, SAVE_PCM_SECOND,g_audio_data_pool_id);
 #endif
 
     while (1)
@@ -291,7 +306,7 @@ static void _test_ai_pdm_in_data(const char *filename, int dev_num, int channel,
     int nSec = 0;
 
 #if ENABLE_SAVE_PCM
-    audio_save_init(filename, sample_rate, channel_count, bit_width, SAVE_PCM_SECOND);
+    audio_save_init(filename, sample_rate, channel_count, bit_width, SAVE_PCM_SECOND,g_audio_data_pool_id);
 #endif
 
     while (1)
@@ -374,7 +389,7 @@ static void _ai_bind_ao(int ai_dev_num, int ai_channel, int ao_dev_num, int ao_c
 static k_vb_blk_handle g_audio_handle;
 static k_s32 _get_audio_frame(k_audio_frame *audio_frame, int nSize)
 {
-    g_audio_handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, nSize, NULL);
+    g_audio_handle = kd_mpi_vb_get_block(g_audio_data_pool_id, nSize, NULL);
     if (g_audio_handle == VB_INVALID_HANDLE)
     {
         printf("%s get vb block error\n", __func__);
@@ -479,25 +494,6 @@ k_s32 audio_sample_vb_init(k_bool enable_cache, k_u32 sample_rate)
 
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
-
-    config.comm_pool[0].blk_cnt = 150;
-    config.comm_pool[0].blk_size = sample_rate * 2 * 4 / AUDIO_PERSEC_DIV_NUM;
-    config.comm_pool[0].mode = enable_cache ? VB_REMAP_MODE_CACHED : VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[1].blk_cnt = 2;
-    config.comm_pool[1].blk_size = sample_rate * 2 * 4 / AUDIO_PERSEC_DIV_NUM * 2; // ao use
-    config.comm_pool[1].mode = enable_cache ? VB_REMAP_MODE_CACHED : VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[2].blk_cnt = 1;
-    config.comm_pool[2].blk_size = sample_rate * 2 * 4 * (SAVE_PCM_SECOND + 1); // save data to memory ,申请大点(+1s)，否则mmz_userdev_mmap会崩溃,wav文件头
-    config.comm_pool[2].mode = enable_cache ? VB_REMAP_MODE_CACHED : VB_REMAP_MODE_NOCACHE;
-
-    int blk_total_size = 0;
-    for (int i = 0; i < 3; i++)
-    {
-        blk_total_size += config.comm_pool[i].blk_cnt * config.comm_pool[i].blk_size;
-    }
-    printf("mmz blk total size:%.2f MB\n", blk_total_size / 1024 / 1024.0);
 
     ret = kd_mpi_vb_set_config(&config);
     if (ret)
@@ -632,6 +628,8 @@ k_s32 audio_sample_send_ao_data(const char *filename, int nDev, int nChannel, in
         return -1;
     }
 
+    g_audio_data_pool_id = audio_data_vb_create_pool();
+
     k_audio_frame audio_frame;
     if (32 == audio_bitpersample)
     {
@@ -699,6 +697,12 @@ k_s32 audio_sample_send_ao_data(const char *filename, int nDev, int nChannel, in
     kd_mpi_ao_disable_chn(nDev, nChannel);
     kd_mpi_ao_disable(nDev);
     _release_audio_frame();
+
+    if(g_audio_data_pool_id != VB_INVALID_HANDLE)
+    {
+        kd_mpi_vb_destory_pool(g_audio_data_pool_id);
+        g_audio_data_pool_id = VB_INVALID_HANDLE;
+    }
 
     return K_SUCCESS;
 }
@@ -943,7 +947,7 @@ static k_s32 _load_file(const char *filename, unsigned char **data, int *size)
 
 static k_s32 _get_audio_stream(k_audio_stream *audio_stream, int nSize, k_vb_blk_handle *handle)
 {
-    *handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, nSize, NULL);
+    *handle = kd_mpi_vb_get_block(g_audio_data_pool_id, nSize, NULL);
     if (*handle == VB_INVALID_HANDLE)
     {
         printf("%s get vb block error\n", __func__);
@@ -979,6 +983,8 @@ static void _test_file_adec_ao_api(const char *filename, int ao_dev_num, int ao_
     }
 
     int enc_frame_len = sample_rate * 2 * 2 / AUDIO_PERSEC_DIV_NUM / 2;
+
+    g_audio_data_pool_id = audio_data_vb_create_pool();
 
     k_vb_blk_handle handle;
     if (K_SUCCESS != _get_audio_stream(&audio_stream, enc_frame_len, &handle))
@@ -1022,6 +1028,12 @@ static void _test_file_adec_ao_api(const char *filename, int ao_dev_num, int ao_
 
     _release_audio_stream(handle);
 
+    if (g_audio_data_pool_id != VB_INVALID_HANDLE)
+    {
+        kd_mpi_vb_destory_pool(g_audio_data_pool_id);
+        g_audio_data_pool_id = VB_INVALID_HANDLE;
+    }
+
     if (file_data != NULL)
     {
         free(file_data);
@@ -1059,6 +1071,7 @@ static void _test_file_adec_ao_sysbind(const char *filename, int ao_dev_num, int
         return;
     }
 
+    g_audio_data_pool_id = audio_data_vb_create_pool();
     // int nCount = 0;
     k_vb_blk_handle handle;
     if (K_SUCCESS != _get_audio_stream(&audio_stream, enc_frame_len, &handle))
@@ -1097,6 +1110,12 @@ static void _test_file_adec_ao_sysbind(const char *filename, int ao_dev_num, int
     {
         free(file_data);
         file_data = NULL;
+    }
+
+    if (g_audio_data_pool_id != VB_INVALID_HANDLE)
+    {
+        kd_mpi_vb_destory_pool(g_audio_data_pool_id);
+        g_audio_data_pool_id = VB_INVALID_HANDLE;
     }
 }
 
@@ -1411,6 +1430,8 @@ static void *sample_play_fn(void *arg)
         return NULL;
     }
 
+    g_audio_data_pool_id = audio_data_vb_create_pool();
+
     k_vb_blk_handle handle;
     if (K_SUCCESS != _get_audio_stream(&audio_stream, enc_frame_len, &handle))
     {
@@ -1449,6 +1470,13 @@ static void *sample_play_fn(void *arg)
         free(file_data);
         file_data = NULL;
     }
+
+    if (g_audio_data_pool_id != VB_INVALID_HANDLE)
+    {
+        kd_mpi_vb_destory_pool(g_audio_data_pool_id);
+        g_audio_data_pool_id = VB_INVALID_HANDLE;
+    }
+
     return NULL;
 }
 

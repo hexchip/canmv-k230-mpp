@@ -94,7 +94,7 @@ typedef struct
 void sample_dv_vicap_config(k_u32 ch, k_s32 sensor_index);
 void sample_dv_vicap_start(k_u32 ch);
 void sample_dv_vicap_stop(k_u32 ch);
-int sample_dv_dma_init();
+int sample_dv_dma_init(k_u32 gdma_pool_id);
 int sample_dv_dma_delete();
 int sample_dv_dpu_init();
 int sample_dv_dpu_delete();

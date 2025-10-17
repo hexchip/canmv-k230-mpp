@@ -87,6 +87,7 @@ k_dpu_user_space_t g_disp_out_xy_space;
 k_dpu_user_space_t g_qlt_out_space;
 
 k_video_frame_info insert_pic_info[2];
+static k_u32 g_input_pool_id = VB_INVALID_POOLID;
 
 static pthread_t tid1;
 k_bool thread_exit = K_FALSE;
@@ -198,15 +199,9 @@ static k_s32 dpu_vb_init()
 {
     k_s32 ret;
     k_vb_config config;
-    k_s32 i;
 
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
-    for (i = 0; i < 1; i++) {
-        config.comm_pool[i].blk_cnt = DPU_FRAME_COUNT + 4;
-        config.comm_pool[i].mode = VB_REMAP_MODE_NOCACHE;
-        config.comm_pool[i].blk_size = VB_BLK_SIZE;
-    }
     ret = kd_mpi_vb_set_config(&config);
     if(ret)
         printf("vb_set_config failed ret:%d\n", ret);
@@ -220,12 +215,28 @@ static k_s32 dpu_vb_init()
     ret = kd_mpi_vb_init();
     if(ret)
         printf("vb_init failed ret:%d\n", ret);
+
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = 4;
+    pool_config.blk_size = VB_BLK_SIZE;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    g_input_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("input_pool_id %d\n", g_input_pool_id);
+
     return ret;
 }
 
 static k_s32 dpu_vb_exit()
 {
     k_s32 ret;
+
+    if (g_input_pool_id != VB_INVALID_POOLID) {
+        ret = kd_mpi_vb_destory_pool(g_input_pool_id);
+        if (ret)
+            printf("destroy input pool failed ret:%d\n", ret);
+        g_input_pool_id = VB_INVALID_POOLID;
+    }
     ret = kd_mpi_vb_exit();
     if (ret)
         printf("vb_exit failed ret:%d\n", ret);
@@ -403,7 +414,7 @@ static k_s32 dpu_input_data_prepare_bind(k_video_frame_info *vf_info, k_u8 *src_
 
     size = vf_info->v_frame.height * vf_info->v_frame.width * 4;
     printf("%s,%d, size:%x\n", __func__, __LINE__, size);
-    handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, size, NULL);
+    handle = kd_mpi_vb_get_block(g_input_pool_id, size, NULL);
     if(handle == VB_INVALID_HANDLE) {
         printf("%s get vb block error\n", __func__);
         return K_FAILED;

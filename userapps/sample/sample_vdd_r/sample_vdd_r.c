@@ -26,9 +26,25 @@
 #include "sample_vdd_r.h"
 
 sample_vdd_cfg_t g_vdd_cfg[SAMPLE_VDD_CHN_NUM];
-
+static k_u32 gdma_attach_pool_id = VB_INVALID_POOLID;
 static pthread_t tid1;
 k_bool thread_exit = K_FALSE;
+
+static k_u32 gdma_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+
+    pool_config.blk_cnt =  DPU_FRAME_COUNT;
+    pool_config.blk_size = g_vdd_cfg[0].img_height * g_vdd_cfg[0].img_width;
+
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s gdma  poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
 
 static k_s32 sample_vdd_vb_init()
 {
@@ -42,16 +58,6 @@ static k_s32 sample_vdd_vb_init()
     config.comm_pool[0].blk_cnt = DPU_FRAME_COUNT * 2 + 3;
     config.comm_pool[0].blk_size = g_vdd_cfg[0].img_height * g_vdd_cfg[0].img_width * 3 / 2;
     config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-
-    /* dma vb init */
-    config.comm_pool[1].blk_cnt = DPU_FRAME_COUNT;
-    config.comm_pool[1].blk_size = g_vdd_cfg[0].img_height * g_vdd_cfg[0].img_width;
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
-
-    /* dpu vb init */
-    config.comm_pool[2].blk_cnt = (DPU_FRAME_COUNT);
-    config.comm_pool[2].blk_size = 5 * 1024 * 1024;
-    config.comm_pool[2].mode = VB_REMAP_MODE_NOCACHE;
 
     ret = kd_mpi_vb_set_config(&config);
     if(ret)
@@ -197,6 +203,8 @@ int main(int argc, char *argv[])
         return ret;
     }
 
+    gdma_attach_pool_id = gdma_vb_create_pool();
+
     ret = sample_vdd_bind();
     if (ret) {
         printf("sample_vdd_bind failed\n");
@@ -209,7 +217,7 @@ int main(int argc, char *argv[])
         goto err_unbind;
     }
 
-    ret = sample_vdd_dma_init();
+    ret = sample_vdd_dma_init(gdma_attach_pool_id);
     if (ret) {
         printf("sample_dma_init failed\n");
         goto err_dpu_delete;
@@ -241,6 +249,11 @@ err_unbind:
     sample_vdd_unbind();
 
 err_vb_exit:
+    if (gdma_attach_pool_id != VB_INVALID_POOLID) {
+        kd_mpi_dma_detach_vb_pool(gdma_attach_pool_id);
+        gdma_attach_pool_id = VB_INVALID_POOLID;
+    }
+
     sample_vdd_vb_exit();
     printf("%s,%d\n", __func__, __LINE__);
 

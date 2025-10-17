@@ -98,6 +98,8 @@ private:
 private:
     int CreateVdecVBPool(const VdecInitParams &params);
     int DestroyVdecVBPool();
+    int CreateVencVBPool();
+    int DestroyVencVBPool();
 
 private:
     k_u32 audio_sample_rate_{8000}; // for G711
@@ -135,6 +137,7 @@ private:
     VdecInitParams vdec_params_;
     k_u32 input_pool_id_{VB_INVALID_POOLID};
     k_u32 output_pool_id_{VB_INVALID_POOLID};
+    k_u32 venc_attach_pool_id_{VB_INVALID_POOLID};
     int vdec_chn_id_{0};
     std::mutex vdec_vo_mutex_;
     bool vdec_vo_created_{false};
@@ -276,24 +279,9 @@ int KdMedia::Impl::Init(const KdMediaInputConfig &config)
     k_s32 ret = 0;
     k_vb_config vb_config;
     memset(&vb_config, 0, sizeof(vb_config));
-    vb_config.max_pool_cnt = config.video_valid ? 5 : 2;
-    vb_config.comm_pool[0].blk_cnt = 150;
-    vb_config.comm_pool[0].blk_size = config.audio_samplerate * 2 * 4 / AUDIO_PERSEC_DIV_NUM;
-    vb_config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-    vb_config.comm_pool[1].blk_cnt = 2;
-    vb_config.comm_pool[1].blk_size = config.audio_samplerate * 2 * 4 / AUDIO_PERSEC_DIV_NUM * 2;
-    vb_config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
+    vb_config.max_pool_cnt = 64;
     if (config.video_valid)
     {
-        k_u64 pic_size = config.venc_width * config.venc_height * 2;
-        k_u64 stream_size = config.venc_width * config.venc_height / 2;
-        vb_config.comm_pool[2].blk_cnt = 6;
-        vb_config.comm_pool[2].blk_size = ((pic_size + 0xfff) & ~0xfff);
-        vb_config.comm_pool[2].mode = VB_REMAP_MODE_NOCACHE;
-        vb_config.comm_pool[3].blk_cnt = 30;
-        vb_config.comm_pool[3].blk_size = ((stream_size + 0xfff) & ~0xfff);
-        vb_config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;
-
         memset(&vcap_dev_info_, 0, sizeof(vcap_dev_info_));
         vcap_dev_info_.dw_en = K_TRUE;
 
@@ -308,9 +296,9 @@ int KdMedia::Impl::Init(const KdMediaInputConfig &config)
                 std::cout << "KdMedia::Init() kd_mpi_vicap_get_sensor_info failed, ret = " << ret << std::endl;
                 return ret;
             }
-            vb_config.comm_pool[4].blk_cnt = 6;
-            vb_config.comm_pool[4].blk_size = VI_ALIGN_UP(sensor_info.width * sensor_info.height * 3 / 2, 0x1000);
-            vb_config.comm_pool[4].mode = VB_REMAP_MODE_NOCACHE;
+            vb_config.comm_pool[0].blk_cnt = 6;
+            vb_config.comm_pool[0].blk_size = VI_ALIGN_UP(sensor_info.width * sensor_info.height * 3 / 2, 0x1000);
+            vb_config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
         }
     }
 
@@ -368,13 +356,7 @@ int KdMedia::Impl::Init()
     k_s32 ret = 0;
     k_vb_config vb_config;
     memset(&vb_config, 0, sizeof(vb_config));
-    vb_config.max_pool_cnt = 2 + 2;
-    vb_config.comm_pool[0].blk_cnt = 150;
-    vb_config.comm_pool[0].blk_size = 48000 * 2 * 4 / AUDIO_PERSEC_DIV_NUM;
-    vb_config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-    vb_config.comm_pool[1].blk_cnt = 2;
-    vb_config.comm_pool[1].blk_size = 48000 * 2 * 4 / AUDIO_PERSEC_DIV_NUM * 2;
-    vb_config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
+    vb_config.max_pool_cnt = 64;
 
     ret = kd_mpi_vb_set_config(&vb_config);
     if (ret)
@@ -930,11 +912,9 @@ k_s32 KdMedia::Impl::kd_sample_venc_init(k_u32 chn_num, k_venc_chn_attr *pst_ven
     k_s32 ret;
     venc_output_arr[chn_num].pic_width = pst_venc_attr->venc_attr.pic_width;
     venc_output_arr[chn_num].pic_height = pst_venc_attr->venc_attr.pic_height;
-    printf("venc[%d] %d*%d size:%d cnt:%d srcfps:%d dstfps:%d rate:%d rc_mode:%d type:%d profile:%d\n", chn_num,
+    printf("venc[%d] %d*%d srcfps:%d dstfps:%d rate:%d rc_mode:%d type:%d profile:%d\n", chn_num,
            pst_venc_attr->venc_attr.pic_width,
            pst_venc_attr->venc_attr.pic_height,
-           pst_venc_attr->venc_attr.stream_buf_size,
-           pst_venc_attr->venc_attr.stream_buf_cnt,
            pst_venc_attr->rc_attr.cbr.src_frame_rate,
            pst_venc_attr->rc_attr.cbr.dst_frame_rate,
            pst_venc_attr->rc_attr.cbr.bit_rate,
@@ -993,6 +973,33 @@ int KdMedia::Impl::DestroyVdecVBPool()
     if (ret != K_SUCCESS)
     {
         printf("kd_mpi_vb_destory_pool %d failed(output), ret = %d\n", output_pool_id_, ret);
+    }
+    return 0;
+}
+
+int KdMedia::Impl::CreateVencVBPool()
+{
+    k_vb_pool_config pool_config;
+    k_u64 stream_size = (config_.venc_width * config_.venc_height / 2 + 0xfff) & ~0xfff;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = 10;
+    pool_config.blk_size = stream_size;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    venc_attach_pool_id_ = kd_mpi_vb_create_pool(&pool_config);
+    if (venc_attach_pool_id_ == VB_INVALID_POOLID)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+int KdMedia::Impl::DestroyVencVBPool()
+{
+    k_s32 ret;
+
+    if (venc_attach_pool_id_ != VB_INVALID_POOLID){
+        ret = kd_mpi_vb_destory_pool(venc_attach_pool_id_);
+        venc_attach_pool_id_ = VB_INVALID_POOLID;
     }
     return 0;
 }
@@ -1086,13 +1093,14 @@ int KdMedia::Impl::CreateVcapVEnc(IOnVEncData *on_venc_data)
     }
     on_venc_data_ = on_venc_data;
 
+    CreateVencVBPool();
+
+    kd_mpi_venc_attach_vb_pool(venc_chn_id_,venc_attach_pool_id_);
+
     k_venc_chn_attr chn_attr;
     memset(&chn_attr, 0, sizeof(chn_attr));
-    k_u64 stream_size = config_.venc_width * config_.venc_height / 2;
     chn_attr.venc_attr.pic_width = config_.venc_width;
     chn_attr.venc_attr.pic_height = config_.venc_height;
-    chn_attr.venc_attr.stream_buf_size = ((stream_size + 0xfff) & ~0xfff);
-    chn_attr.venc_attr.stream_buf_cnt = 30;
     chn_attr.rc_attr.rc_mode = K_VENC_RC_MODE_CBR;
     chn_attr.rc_attr.cbr.src_frame_rate = 30;
     chn_attr.rc_attr.cbr.dst_frame_rate = 30;
@@ -1178,7 +1186,10 @@ int KdMedia::Impl::DestroyVcapVEnc()
     {
         return 0;
     }
+    kd_mpi_venc_detach_vb_pool(venc_chn_id_);
     kd_mpi_venc_destroy_chn(venc_chn_id_);
+
+    DestroyVencVBPool();
     return 0;
 }
 
@@ -1351,7 +1362,7 @@ int KdMedia::Impl::StopVcapVEnc()
     // stop vcap
     kd_sample_vicap_stop(vi_dev_id_);
     // stop all encoders
-    kd_mpi_venc_stop_chn(vi_chn_id_);
+    kd_mpi_venc_stop_chn(venc_chn_id_);
     return 0;
 }
 
@@ -1367,14 +1378,18 @@ int KdMedia::Impl::CreateVdecVo(const VdecInitParams &params)
         return -1;
     }
 
+    kd_mpi_vdec_attach_vb_pool(vdec_chn_id_,output_pool_id_);
+    if (ret != K_SUCCESS)
+    {
+        printf("KdMedia::CreateVdecVo() : kd_mpi_vdec_attach_vb_pool failed, ret = %d\n", ret);
+        goto err_exit;
+    }
+
     k_vdec_chn_attr attr;
     memset(&attr, 0, sizeof(attr));
     attr.pic_width = params.max_width;
     attr.pic_height = params.max_height;
-    attr.frame_buf_cnt = params.output_buf_num;
-    attr.frame_buf_size = params.max_width * params.max_height * 2;
     attr.stream_buf_size = params.input_buf_size;
-    attr.frame_buf_pool_id = output_pool_id_;
     switch (params.type)
     {
     case KdMediaVideoType::kVideoTypeH264:
@@ -1417,6 +1432,7 @@ int KdMedia::Impl::DestroyVDecVo()
         printf("KdMedia::DestroyVDecVo() : stop first!!!\n");
         return -1;
     }
+    kd_mpi_vdec_detach_vb_pool(vdec_chn_id_);
     kd_mpi_vdec_destroy_chn(vdec_chn_id_);
     vo_layer_deinit();
     vo_deinit();

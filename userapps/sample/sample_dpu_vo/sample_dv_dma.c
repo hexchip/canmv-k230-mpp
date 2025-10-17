@@ -58,7 +58,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
     return K_SUCCESS;
 }
 
-int sample_dv_dma_init()
+int sample_dv_dma_init(k_u32 gdma_pool_id)
 {
     k_s32 ret;
 
@@ -70,7 +70,7 @@ int sample_dv_dma_init()
     dma_chn_attr_init(chn_attr);
 
     /************************************************************
-     * This part is the demo that actually starts to use DMA 
+     * This part is the demo that actually starts to use DMA
      ***********************************************************/
     ret = kd_mpi_dma_set_dev_attr(&dma_dev_attr);
     if (ret != K_SUCCESS) {
@@ -88,6 +88,12 @@ int sample_dv_dma_init()
     if (dma_ch < 0)
         goto err_dma_dev;
 
+    ret = kd_mpi_dma_attach_vb_pool(dma_ch, gdma_pool_id);
+    if (ret != K_SUCCESS) {
+        printf("attach vb pool error\r\n");
+        goto err_dma_dev;
+    }
+
     ret = kd_mpi_dma_set_chn_attr(dma_ch, &chn_attr[DMA_CHN0]);
     if (ret != K_SUCCESS) {
         printf("set chn attr error\r\n");
@@ -103,11 +109,16 @@ int sample_dv_dma_init()
     return K_SUCCESS;
 
     /************************************************************
-     * This part is used to stop the DMA 
+     * This part is used to stop the DMA
      ***********************************************************/
     ret = kd_mpi_dma_stop_chn(dma_ch);
     if (ret != K_SUCCESS) {
         printf("stop chn error\r\n");
+    }
+
+    ret =  kd_mpi_dma_detach_vb_pool(dma_ch);
+    if (ret != K_SUCCESS) {
+        printf("detach vb pool error\r\n");
     }
 
     if (dma_ch >= 0)
@@ -128,11 +139,16 @@ int sample_dv_dma_delete()
     k_s32 ret;
 
     /************************************************************
-     * This part is used to stop the DMA 
+     * This part is used to stop the DMA
      ***********************************************************/
     ret = kd_mpi_dma_stop_chn(DMA_CHN0);
     if (ret != K_SUCCESS) {
         printf("stop chn error\r\n");
+    }
+
+    ret =  kd_mpi_dma_detach_vb_pool(dma_ch);
+    if (ret != K_SUCCESS) {
+        printf("detach vb pool error\r\n");
     }
 
     if (dma_ch >= 0)

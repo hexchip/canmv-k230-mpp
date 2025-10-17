@@ -48,20 +48,20 @@ all: $(BIN)
 
 $(COBJS): $(BUILD)/%.o : %.c
 	@echo [CC] $@
-	@$(CC) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CC) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 $(CPP_OBJS): $(BUILD)/%.o : %.cc
 	@echo CXX $@
-	@$(CPP) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CPP) $(CC_CFLAGS) $(CXX_FLAGS_AI) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 $(BIN): $(OBJS)
 	@echo [LD] $@
-	@mkdir -p $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/
-	@$(CPP) -o $(BIN)  $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $^ -L$(LIBPATH) $(CXX_FLAGS_AI) -Wl,--start-group $(LIBS) -Wl,--end-group
-	@cp $(KMODEL_LIBPATH)/mobile_retinaface/test.kmodel $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/
+	$(Q)mkdir -p $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/
+	$(Q)$(CPP) -o $(BIN)  $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $^ -L$(LIBPATH) $(CXX_FLAGS_AI) -Wl,--start-group $(LIBS) -Wl,--end-group
+	$(Q)cp $(KMODEL_LIBPATH)/mobile_retinaface/test.kmodel $(MPP_USERAPP_SMAPLE_ELF_DIR)/face_detect/
 
 clean:
-	@rm -rf $(BIN) $(OBJS) $(DEPS)
+	$(Q)rm -rf $(BIN) $(OBJS) $(DEPS)
 
 .PHONY: all clean
 
@@ -73,6 +73,6 @@ clean:
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 $(OBJS): | $(OBJ_DIRS)
 $(OBJ_DIRS):
-	@mkdir -p $@
+	$(Q)mkdir -p $@
 
 -include $(DEPS)

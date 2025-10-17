@@ -32,14 +32,14 @@ all: $(BIN)
 
 $(COBJS): $(BUILD)/%.o : %.c
 	@echo [CC] $@
-	@$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CC) $(CC_CFLAGS) $(LOCAL_CFLAGS) $(BSP_CFLGAS) $(RTSMART_CFLAGS) $(MPP_USER_CFLGAS) -MD -MP -MF $@.d -c $< -o $@
 
 $(BIN): $(OBJS) $(MPP_SRC_DIR)/userapps/lib/libvicap.a
 	@echo [LD] $@
-	@$(CC) -o $(BIN) $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $(OBJS) -L$(LIBPATH) -Wl,--start-group $(LIBS) -Wl,--end-group
+	$(Q)$(CC) -o $(BIN) $(LINKFLAG) -Wl,--whole-archive -Wl,--no-whole-archive -n --static $(OBJS) -L$(LIBPATH) -Wl,--start-group $(LIBS) -Wl,--end-group
 
 clean:
-	@rm -rf $(BIN) $(OBJS) $(DEPS)
+	$(Q)rm -rf $(BIN) $(OBJS) $(DEPS)
 
 .PHONY: all clean
 
@@ -51,6 +51,6 @@ clean:
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 $(OBJS): | $(OBJ_DIRS)
 $(OBJ_DIRS):
-	@mkdir -p $@
+	$(Q)mkdir -p $@
 
 -include $(DEPS)

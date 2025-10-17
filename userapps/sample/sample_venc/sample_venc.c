@@ -73,7 +73,7 @@
 #define OSD_BUF_SIZE OSD_MAX_WIDTH*OSD_MAX_HEIGHT*4
 #define INPUT_BUF_CNT   6
 #define OUTPUT_BUF_CNT  15
-#define OSD_BUF_CNT     20
+#define OSD_BUF_CNT     1
 
 extern const unsigned int osd_data;
 extern const int osd_data_size;
@@ -144,6 +144,8 @@ static venc_conf_t g_venc_conf;
 static k_u32 intbuf_size=0;
 static k_u32 enc_width=1280;
 static k_u32 enc_height=720;
+static k_u32 venc_attach_pool_id = 0;
+static k_u32 osd_attach_pool_id = 0;
 
 static inline void CHECK_RET(k_s32 ret, const char *func, const int line)
 {
@@ -273,23 +275,10 @@ static k_s32 sample_vb_init(k_u32 ch_cnt, k_bool osd_enable)
     k_vb_config config;
 
     memset(&config, 0, sizeof(config));
-    if (osd_enable)
-    {
-        config.max_pool_cnt = 3;
-        config.comm_pool[2].blk_cnt = OSD_BUF_CNT * ch_cnt;
-        config.comm_pool[2].blk_size = OSD_BUF_SIZE;
-        config.comm_pool[2].mode = VB_REMAP_MODE_NOCACHE;
-    }
-    else
-    {
-        config.max_pool_cnt = 2;
-    }
+    config.max_pool_cnt = 64;
     config.comm_pool[0].blk_cnt = INPUT_BUF_CNT * ch_cnt;
     config.comm_pool[0].blk_size = FRAME_BUF_SIZE;
     config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[1].blk_cnt = OUTPUT_BUF_CNT * ch_cnt;
-    config.comm_pool[1].blk_size = STREAM_BUF_SIZE;
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
 
     ret = kd_mpi_vb_set_config(&config);
 
@@ -303,6 +292,40 @@ static k_s32 sample_vb_init(k_u32 ch_cnt, k_bool osd_enable)
         venc_debug("vb_init failed ret:%d\n", ret);
 
     return ret;
+}
+
+static k_u32 venc_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = OUTPUT_BUF_CNT;
+    pool_config.blk_size = STREAM_BUF_SIZE;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_u32 osd_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = OSD_BUF_CNT;
+    pool_config.blk_size = OSD_BUF_SIZE;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_s32 vb_destory_pool(k_u32 pool_id)
+{
+    kd_mpi_vb_destory_pool(pool_id);
+    return 0;
 }
 
 static k_s32 sample_vb_exit(void)
@@ -456,7 +479,7 @@ static k_s32 prepare_osd(osd_conf_t *osd_conf, k_vb_blk_handle *osd_blk_handle)
 
     for (i = 0; i < 1; i++)
     {
-        handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, OSD_BUF_SIZE, NULL);
+        handle = kd_mpi_vb_get_block(osd_attach_pool_id, OSD_BUF_SIZE, NULL);
 
         if (handle == VB_INVALID_HANDLE)
         {
@@ -516,6 +539,7 @@ k_s32 sample_exit(venc_conf_t *venc_conf)
         if (venc_conf->osd_enable)
             kd_mpi_venc_detach_2d(ch);
     case VENC_SAMPLE_STATUS_INIT:
+        kd_mpi_venc_detach_vb_pool(ch);
         kd_mpi_venc_destroy_chn(ch);
         if (venc_conf->osd_enable)
         {
@@ -541,6 +565,13 @@ k_s32 sample_exit(venc_conf_t *venc_conf)
 
     ret = kd_mpi_venc_close_fd();
     CHECK_RET(ret, __func__, __LINE__);
+
+    vb_destory_pool(venc_attach_pool_id);
+
+    if (osd_attach_pool_id > 0){
+        vb_destory_pool(osd_attach_pool_id);
+        osd_attach_pool_id = 0;
+    }
 
     if (output_file)
         fclose(output_file);
@@ -577,12 +608,13 @@ k_s32 sample_venc_h265(k_vicap_sensor_type sensor_type)
 
     sample_vb_init(chnum, K_FALSE);
 
+    venc_attach_pool_id = venc_vb_create_pool();
+    kd_mpi_venc_attach_vb_pool(ch,venc_attach_pool_id);
+
     k_venc_chn_attr attr;
     memset(&attr, 0, sizeof(attr));
     attr.venc_attr.pic_width = width;
     attr.venc_attr.pic_height = height;
-    attr.venc_attr.stream_buf_size = STREAM_BUF_SIZE;
-    attr.venc_attr.stream_buf_cnt = OUTPUT_BUF_CNT;
 
     attr.rc_attr.rc_mode = rc_mode;
     attr.rc_attr.cbr.src_frame_rate = 30;
@@ -625,12 +657,14 @@ k_s32 sample_venc_h265(k_vicap_sensor_type sensor_type)
     {
         usleep(10000);
     }
+
     return K_SUCCESS;
 }
 
 k_s32 sample_venc_jpeg(k_vicap_sensor_type sensor_type)
 {
     int chnum = 1;
+    k_u32 venc_attach_pool_id = 0;
     int ch = 0;
     k_u32 output_frames = 10;
     int width       = enc_width;
@@ -642,12 +676,13 @@ k_s32 sample_venc_jpeg(k_vicap_sensor_type sensor_type)
 
     sample_vb_init(chnum, K_FALSE);
 
+    venc_attach_pool_id = venc_vb_create_pool();
+    kd_mpi_venc_attach_vb_pool(ch,venc_attach_pool_id);
+
     k_venc_chn_attr attr;
     memset(&attr, 0, sizeof(attr));
     attr.venc_attr.pic_width = width;
     attr.venc_attr.pic_height = height;
-    attr.venc_attr.stream_buf_size = STREAM_BUF_SIZE;
-    attr.venc_attr.stream_buf_cnt = OUTPUT_BUF_CNT;
 
     attr.venc_attr.type = type;
     attr.rc_attr.rc_mode = rc_mode;
@@ -689,12 +724,14 @@ k_s32 sample_venc_jpeg(k_vicap_sensor_type sensor_type)
     {
         usleep(10000);
     }
+
     return K_SUCCESS;
 }
 
 k_s32 sample_venc_osd_h264(k_vicap_sensor_type sensor_type)
 {
     int chnum = 1;
+    k_u32 venc_attach_pool_id = 0;
     int ch = 0;
     k_u32 output_frames = 10;
     k_u32 bitrate   = 4000;   //kbps
@@ -721,16 +758,20 @@ k_s32 sample_venc_osd_h264(k_vicap_sensor_type sensor_type)
     int ret = 0;
 
     sample_vb_init(chnum, K_TRUE);
+
+    osd_attach_pool_id = osd_vb_create_pool();
+
     g_venc_conf.osd_conf = &osd_conf;
     g_venc_conf.osd_enable = K_TRUE;
     prepare_osd(&osd_conf, &g_venc_conf.osd_blk_handle);
+
+    venc_attach_pool_id = venc_vb_create_pool();
+    kd_mpi_venc_attach_vb_pool(ch,venc_attach_pool_id);
 
     k_venc_chn_attr attr;
     memset(&attr, 0, sizeof(attr));
     attr.venc_attr.pic_width = width;
     attr.venc_attr.pic_height = height;
-    attr.venc_attr.stream_buf_size = STREAM_BUF_SIZE;
-    attr.venc_attr.stream_buf_cnt = OUTPUT_BUF_CNT;
 
     attr.rc_attr.rc_mode = rc_mode;
     attr.rc_attr.cbr.src_frame_rate = 30;
@@ -798,12 +839,14 @@ k_s32 sample_venc_osd_h264(k_vicap_sensor_type sensor_type)
     {
         usleep(10000);
     }
+
     return K_SUCCESS;
 }
 
 k_s32 sample_venc_osd_border_h265(k_vicap_sensor_type sensor_type)
 {
     int chnum = 1;
+    k_u32 venc_attach_pool_id = 0;
     int ch = 0;
     k_u32 output_frames = 10;
     k_u32 bitrate   = 4000;   //kbps
@@ -839,16 +882,19 @@ k_s32 sample_venc_osd_border_h265(k_vicap_sensor_type sensor_type)
     int ret = 0;
 
     sample_vb_init(chnum, K_TRUE);
+
+    osd_attach_pool_id = osd_vb_create_pool();
     g_venc_conf.osd_conf = &osd_conf;
     g_venc_conf.osd_enable = K_TRUE;
     prepare_osd(&osd_conf, &g_venc_conf.osd_blk_handle);
+
+    venc_attach_pool_id = venc_vb_create_pool();
+    kd_mpi_venc_attach_vb_pool(ch,venc_attach_pool_id);
 
     k_venc_chn_attr attr;
     memset(&attr, 0, sizeof(attr));
     attr.venc_attr.pic_width = width;
     attr.venc_attr.pic_height = height;
-    attr.venc_attr.stream_buf_size = STREAM_BUF_SIZE;
-    attr.venc_attr.stream_buf_cnt = OUTPUT_BUF_CNT;
 
     attr.rc_attr.rc_mode = rc_mode;
     attr.rc_attr.cbr.src_frame_rate = 30;
@@ -926,6 +972,7 @@ k_s32 sample_venc_osd_border_h265(k_vicap_sensor_type sensor_type)
     {
         usleep(10000);
     }
+
     return K_SUCCESS;
 }
 

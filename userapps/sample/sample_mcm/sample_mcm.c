@@ -35,7 +35,7 @@
 #define ISP_CHN0_HEIGHT             (720)
 #define VICAP_OUTPUT_BUF_NUM        10
 #define VENC_BUF_NUM                6
-#define NONAI_2D_BUF_NUM            6
+#define NONAI_2D_CHN_BUF_NUM        2
 
 #define TOTAL_ENABLE_2D_CH_NUMS     6
 #define NONAI_2D_RGB_CH             4
@@ -47,6 +47,8 @@ static k_u32 g_vo_pool_id;
 static k_u8 exit_flag = 0;
 static k_bool g_enable_2d=K_TRUE;
 static k_vo_layer g_vo_layer = K_VO_LAYER1;
+static k_u32 venc_attach_pool_id = 0;
+static k_u32 nonai_2d_attach_pool_id[TOTAL_ENABLE_2D_CH_NUMS];
 
 typedef struct {
     k_vicap_dev vicap_dev;
@@ -68,6 +70,42 @@ static inline void CHECK_RET(k_s32 ret, const char *func, const int line)
 {
     if (ret)
         printf("error ret %d, func %s line %d\n", ret, func, line);
+}
+
+static k_u32 venc_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = VENC_BUF_NUM;
+    pool_config.blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT / 2 ), 0x1000);
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_u32 nonai_2d_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+
+    pool_config.blk_cnt =  NONAI_2D_CHN_BUF_NUM;
+    pool_config.blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3), 0x1000);
+
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s nonai_2d  poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_s32 vb_destory_pool(k_u32 pool_id)
+{
+    kd_mpi_vb_destory_pool(pool_id);
+    return 0;
 }
 
 static int sample_vb_init(void)
@@ -102,17 +140,6 @@ static int sample_vb_init(void)
     config.comm_pool[3].blk_cnt = VICAP_OUTPUT_BUF_NUM;
     config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;
     config.comm_pool[3].blk_size = VICAP_ALIGN_UP((sride * ISP_CHN0_HEIGHT * 3 ), 0x1000);
-
-    //VB for nonai_2d
-    config.comm_pool[4].blk_cnt = NONAI_2D_BUF_NUM;
-    config.comm_pool[4].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[4].blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3), 0x1000);
-
-    //VB for venc
-    config.comm_pool[5].blk_cnt = VENC_BUF_NUM;
-    config.comm_pool[5].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[5].blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT / 2 ), 0x1000);
-    g_venc_conf.stream_buf_size = config.comm_pool[5].blk_size;
 
     ret = kd_mpi_vb_set_config(&config);
     if (ret) {
@@ -668,6 +695,9 @@ static k_s32 nonai_2d_start()
 
     for(i = 0; i < TOTAL_ENABLE_2D_CH_NUMS; i++)
     {
+        nonai_2d_attach_pool_id[i] = nonai_2d_vb_create_pool();
+        kd_mpi_nonai_2d_attach_vb_pool(i,nonai_2d_attach_pool_id[i]);
+
         attr_2d.mode = K_NONAI_2D_CALC_MODE_CSC;
         if(i == NONAI_2D_RGB_CH)
         {
@@ -695,7 +725,9 @@ static k_s32 nonai_2d_exit()
     for(i = 0; i < TOTAL_ENABLE_2D_CH_NUMS; i++)
     {
         kd_mpi_nonai_2d_stop_chn(i);
+        kd_mpi_nonai_2d_detach_vb_pool(nonai_2d_attach_pool_id[i]);
         kd_mpi_nonai_2d_destroy_chn(i);
+        vb_destory_pool(nonai_2d_attach_pool_id[i]);
     }
 
     ret = kd_mpi_nonai_2d_close();
@@ -840,12 +872,13 @@ k_s32 sample_venc_start()
     k_venc_profile profile  = VENC_PROFILE_H265_MAIN;
     int ret = 0;
 
+    venc_attach_pool_id = venc_vb_create_pool();
+    kd_mpi_venc_attach_vb_pool(0,venc_attach_pool_id);
+
     k_venc_chn_attr attr;
     memset(&attr, 0, sizeof(attr));
     attr.venc_attr.pic_width = width;
     attr.venc_attr.pic_height = height;
-    attr.venc_attr.stream_buf_size = g_venc_conf.stream_buf_size;
-    attr.venc_attr.stream_buf_cnt = VENC_BUF_NUM;
 
     attr.rc_attr.rc_mode = rc_mode;
     attr.rc_attr.cbr.src_frame_rate = 30;
@@ -874,6 +907,9 @@ k_s32 sample_venc_exit()
     int ret = 0;
 
     ret = kd_mpi_venc_stop_chn(0);
+    CHECK_RET(ret, __func__, __LINE__);
+
+    ret = kd_mpi_venc_detach_vb_pool(0);
     CHECK_RET(ret, __func__, __LINE__);
 
     ret = kd_mpi_venc_destroy_chn(0);
@@ -976,6 +1012,8 @@ int main(int argc, char *argv[])
         nonai_2d_exit();
         sample_venc_exit();
     }
+
+    vb_destory_pool(venc_attach_pool_id);
 
     ret = kd_mpi_vb_exit();
     if (ret) {

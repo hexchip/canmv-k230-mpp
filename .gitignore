@@ -4,6 +4,11 @@
 *.version
 .depend
 
+.cache
+.clangd
+compile_commands.json
+compile_commands.events.json
+
 build
 
 include/comm/k_autoconf_comm.h
@@ -45,3 +50,5 @@ middleware/src/x264/src/x264
 middleware/src/x264/src/lib_x264
 middleware/src/x264/src/libx264.a
 middleware/src/x264/src/common/oclobj.h
+
+tuning_server

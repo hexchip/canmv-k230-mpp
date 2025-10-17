@@ -92,7 +92,7 @@ typedef struct {
 
     k_bool chn_enable[VICAP_CHN_ID_MAX];
     k_pixel_format out_format[VICAP_CHN_ID_MAX];
-    
+
     k_bool crop_enable[VICAP_CHN_ID_MAX];
 
     k_vicap_window out_win[VICAP_CHN_ID_MAX];
@@ -119,6 +119,7 @@ typedef struct {
     k_vo_layer layer[MAX_VO_LAYER_NUM];
     k_bool enable[MAX_VO_LAYER_NUM];
     k_s32 dma_ch[MAX_VO_LAYER_NUM];
+    k_u32 gdma_attach_pool_id[MAX_VO_LAYER_NUM];
 } k_vicap_vo_layer_conf;
 
 static k_s32 sample_vicap_vo_init(k_connector_type connector_type)
@@ -224,7 +225,7 @@ static k_s32 sample_vicap_vo_layer_init(k_vicap_vo_layer_conf *layer_conf, k_u32
         }
     }
 
-    // osd enable 
+    // osd enable
     if(layer_conf->enable[2])
     {
         osd_info.act_size.width = layer_conf->width[2]; ;
@@ -253,6 +254,45 @@ static void sample_vicap_disable_vo_layer(k_vo_layer layer)
 static void sample_vicap_disable_vo_osd(k_vo_osd layer)
 {
     kd_mpi_vo_osd_disable(layer);
+}
+
+static k_u32 gdma_vb_create_pool(k_dma_chn_attr_u attr)
+{
+    k_gdma_chn_attr_t *gdma_attr;
+    k_s32 size, size_v, size_h;
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+
+    gdma_attr = &attr.gdma_attr;
+    if (gdma_attr->rotation == DEGREE_90 ||
+        gdma_attr->rotation == DEGREE_270)
+    {
+        size_v = gdma_attr->src_stride[0] * gdma_attr->height;
+        size_h = gdma_attr->dst_stride[0] * gdma_attr->width;
+        size = (size_v > size_h) ? size_v : size_h;
+    }
+    else
+    {
+        size = gdma_attr->src_stride[0] * gdma_attr->height;
+    }
+
+    pool_config.blk_cnt = GDMA_BUF_NUM;
+    if (gdma_attr->pixel_format == DMA_PIXEL_FORMAT_RGB_888)
+    {
+        pool_config.blk_size = size*3;
+    }
+    else if (gdma_attr->pixel_format == DMA_PIXEL_FORMAT_YUV_SEMIPLANAR_420_8BIT)
+    {
+        pool_config.blk_size = size*3/2;
+    }
+
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s dma poolid %d,size:%d\n", __func__,private_pool_id,size);
+
+    return private_pool_id;
 }
 
 static k_s32 sample_vicap_vb_init(vicap_device_obj *dev_obj)
@@ -513,7 +553,7 @@ int main(int argc, char *argv[])
     k_u8 chn_count = 0, cur_chn = 0;
     k_u8 vo_count = 0, preview_count = 0;
 
-    
+
 
     k_u32 pipe_ctrl = 0xFFFFFFFF;
     memset(&dev_attr, 0, sizeof(k_vicap_dev_attr));
@@ -769,7 +809,7 @@ chn_parse:
                     }
                     k_u16 sensor = atoi(argv[i + 1]);
 
-                    device_obj[cur_dev].sensor_type = (k_vicap_sensor_type)sensor;                   
+                    device_obj[cur_dev].sensor_type = (k_vicap_sensor_type)sensor;
                     if(sensor >=SENSOR_TYPE_MAX)
                     {
                         printf("unsupport sensor type.\n");
@@ -1000,7 +1040,7 @@ chn_parse:
                 device_obj[dev_num].mode = VICAP_WORK_SW_TILE_MODE;
             else
                 device_obj[dev_num].mode = VICAP_WORK_OFFLINE_MODE;
-                
+
             if (work_mode == VICAP_WORK_LOAD_IMAGE_MODE) {
                 dev_attr.image_pat = device_obj[dev_num].pattern;
                 dev_attr.sensor_info.sensor_name = device_obj[dev_num].calib_file;
@@ -1140,7 +1180,7 @@ chn_parse:
             }
 
             if (device_obj[dev_num].crop_enable[chn_num]) {
-                chn_attr.crop_win.width = device_obj[dev_num].crop_win[chn_num].width;  //chn_attr.out_win;1166;// 
+                chn_attr.crop_win.width = device_obj[dev_num].crop_win[chn_num].width;  //chn_attr.out_win;1166;//
                 chn_attr.crop_win.height = device_obj[dev_num].crop_win[chn_num].height; //1944;//
                 chn_attr.crop_win.h_start =device_obj[dev_num].out_win[chn_num].h_start;  //713;
                 chn_attr.crop_win.v_start =device_obj[dev_num].out_win[chn_num].v_start;  //0;//
@@ -1264,6 +1304,12 @@ chn_parse:
                     ret = kd_mpi_sys_bind(&src_chn, &dst_chn);
                     if (ret) {
                         printf("kd_mpi_sys_bind failed:0x%x\n", ret);
+                    }
+                    layer_conf.gdma_attach_pool_id[vo_count] = gdma_vb_create_pool(gdma_attr);
+
+                    ret = kd_mpi_dma_attach_vb_pool(gdma_chn, layer_conf.gdma_attach_pool_id[vo_count]);
+                    if (ret != K_SUCCESS) {
+                        printf("dma attach vb pool  error\r\n");
                     }
 
                     ret = kd_mpi_dma_set_chn_attr(gdma_chn, &gdma_attr);
@@ -1627,7 +1673,7 @@ app_exit:
                 } else if (vo_count == 1) {
                     vo_chn = K_VO_DISPLAY_CHN_ID2;
                     layer = K_VO_LAYER2;
-                } 
+                }
                 else if (vo_count == 2) {
                     vo_chn = K_VO_DISPLAY_CHN_ID3;
                     layer = K_VO_OSD0;
@@ -1651,6 +1697,13 @@ app_exit:
                     if (ret != K_SUCCESS) {
                         printf("stop chn error\r\n");
                     }
+
+                    ret = kd_mpi_dma_detach_vb_pool(gdma_chn);
+                    if (ret != K_SUCCESS) {
+                        printf("dma detach vb pool  error\r\n");
+                    }
+                    kd_mpi_vb_destory_pool(layer_conf.gdma_attach_pool_id[vo_count]);
+
                     src_chn.mod_id = K_ID_VI;
                     src_chn.dev_id = dev_num;
                     src_chn.chn_id = chn_num;

@@ -60,6 +60,8 @@
 
 extern const unsigned int osd_data;
 extern const int osd_data_size;
+static k_u32 osd_pool_id = VB_INVALID_HANDLE;
+static k_u32 input_frame_pool_id = VB_INVALID_HANDLE;
 
 typedef struct
 {
@@ -110,6 +112,20 @@ static inline void CHECK_RET(k_s32 ret)
         printf("error %s %d\n", __func__, __LINE__);
 }
 
+static k_u32 vb_create_pool(k_u32 blk_cnt, k_u64 blk_size)
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = blk_cnt;
+    pool_config.blk_size = blk_size;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
 static k_s32 sample_vb_init(sample_osd_conf_t *osd_conf)
 {
     k_s32 ret;
@@ -124,13 +140,13 @@ static k_s32 sample_vb_init(sample_osd_conf_t *osd_conf)
     int i;
 
     memset(&config, 0, sizeof(config));
-    config.max_pool_cnt = 2;
-    config.comm_pool[0].blk_cnt = 6;
-    config.comm_pool[0].blk_size = osd_conf->video_width * osd_conf->video_height * 2;
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_CACHED;
-    config.comm_pool[1].blk_cnt = 6;
-    config.comm_pool[1].blk_size = osd_conf->osd_width * osd_conf->osd_height * 4;
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_CACHED;
+    config.max_pool_cnt = 64;
+    // config.comm_pool[0].blk_cnt = 6;
+    // config.comm_pool[0].blk_size = osd_conf->video_width * osd_conf->video_height * 2;
+    // config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_CACHED;
+    // config.comm_pool[1].blk_cnt = 6;
+    // config.comm_pool[1].blk_size = osd_conf->osd_width * osd_conf->osd_height * 4;
+    // config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_CACHED;
 
     ret = kd_mpi_vb_set_config(&config);
 
@@ -145,13 +161,16 @@ static k_s32 sample_vb_init(sample_osd_conf_t *osd_conf)
 
     printf("%s>input frames %d\n", __func__, osd_conf->input_frames);
 
+    input_frame_pool_id =  vb_create_pool(6,osd_conf->video_width * osd_conf->video_height * 2);
+    osd_pool_id = vb_create_pool(6, osd_conf->osd_width * osd_conf->osd_height * 4);
+
     osd_conf->video_blk_handle = malloc(osd_conf->input_frames * sizeof(osd_conf->video_blk_handle));
 
     for (i = 0; i < osd_conf->input_frames; i++)
     {
         int stride;
 
-        handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, config.comm_pool[0].blk_size, NULL);
+        handle = kd_mpi_vb_get_block(input_frame_pool_id, osd_conf->video_width * osd_conf->video_height * 2, NULL);
         if (handle == VB_INVALID_HANDLE)
         {
             printf("%s video get vb block error\n", __func__);
@@ -240,7 +259,7 @@ static k_s32 sample_vb_init(sample_osd_conf_t *osd_conf)
 
     for (i = 0; i < 1; i++)
     {
-        handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, config.comm_pool[1].blk_size, NULL);
+        handle = kd_mpi_vb_get_block(osd_pool_id, osd_conf->osd_width * osd_conf->osd_height * 4, NULL);
 
         if (handle == VB_INVALID_HANDLE)
         {
@@ -295,6 +314,17 @@ static k_s32 sample_vb_exit(void)
         kd_mpi_vb_release_block(g_osd_conf.video_blk_handle[i]);
     }
     kd_mpi_vb_release_block(g_osd_conf.osd_blk_handle);
+
+    if(input_frame_pool_id != VB_INVALID_HANDLE){
+        kd_mpi_vb_destory_pool(input_frame_pool_id);
+        input_frame_pool_id = VB_INVALID_HANDLE;
+    }
+
+    if(osd_pool_id != VB_INVALID_HANDLE){
+        kd_mpi_vb_destory_pool(osd_pool_id);
+        osd_pool_id = VB_INVALID_HANDLE;
+    }
+
     ret = kd_mpi_vb_exit();
     if (ret)
         printf("vb_exit failed ret:%d\n", ret);

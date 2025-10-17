@@ -101,6 +101,8 @@ k_video_frame_info df_info_dst[DMA_MAX_CHN_NUMS];
 k_u32 gdma_size[4] = {0, 0, 0, 0};
 k_bool g_end = K_FALSE;
 static k_s32 dma_ch[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+static k_u32 dma_attach_pool_id[DMA_MAX_CHN_NUMS] = {VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID,
+                                     VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID, VB_INVALID_POOLID};
 
 static pthread_t tid1;
 
@@ -127,7 +129,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
 
     /* channel 0 */
     gdma_attr = &attr[0].gdma_attr;
-    gdma_attr->buffer_num = 3;
+    gdma_attr->buffer_num = DMA_BUFF_NUM;
     gdma_attr->rotation = DEGREE_90;
     gdma_attr->x_mirror = K_FALSE;
     gdma_attr->y_mirror = K_FALSE;
@@ -140,7 +142,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
 
     /* channel 1 */
     gdma_attr = &attr[1].gdma_attr;
-    gdma_attr->buffer_num = 3;
+    gdma_attr->buffer_num = DMA_BUFF_NUM;
     gdma_attr->rotation = DEGREE_180;
     gdma_attr->x_mirror = K_FALSE;
     gdma_attr->y_mirror = K_FALSE;
@@ -155,7 +157,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
 
     /* channel 2 */
     gdma_attr = &attr[2].gdma_attr;
-    gdma_attr->buffer_num = 3;
+    gdma_attr->buffer_num = DMA_BUFF_NUM;
     gdma_attr->rotation = DEGREE_0;
     gdma_attr->x_mirror = K_TRUE;
     gdma_attr->y_mirror = K_TRUE;
@@ -172,14 +174,14 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8])
 
     /* channel 4 */
     sdma_attr = &attr[4].sdma_attr;
-    sdma_attr->buffer_num = 3;
+    sdma_attr->buffer_num = DMA_BUFF_NUM;
     sdma_attr->line_size = DMA_CHN4_LINE_SIZE;
     sdma_attr->data_mode = DIMENSION1;
     sdma_attr->work_mode = DMA_UNBIND;
 
     /* channel 5 */
     sdma_attr = &attr[5].sdma_attr;
-    sdma_attr->buffer_num = 3;
+    sdma_attr->buffer_num = DMA_BUFF_NUM;
     sdma_attr->line_size = DMA_CHN5_LINE_SIZE;
     sdma_attr->line_space = DMA_CHN5_LINE_SPACE;
     sdma_attr->line_num = DMA_CHN5_LINE_NUM;
@@ -308,21 +310,21 @@ static k_s32 dma_chn_data_init(k_s32 chn_num, k_dma_chn_attr_u *attr, k_video_fr
     return K_SUCCESS;
 }
 
-static k_s32 dma_vb_init(k_dma_chn_attr_u attr[8], k_u8 planar[8])
+static k_s32 dma_vb_create_pool(k_dma_chn_attr_u attr[8], k_u8 planar[8])
 {
-    k_s32 ret;
-    k_vb_config config;
     k_s32 i;
     k_gdma_chn_attr_t *gdma_attr;
     k_s32 size, size_v, size_h;
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
 
-    memset(&config, 0, sizeof(config));
-    config.max_pool_cnt = 64;
+
     for (i = 0; i < DMA_MAX_CHN_NUMS; i++)
     {
         if (planar[i] == 0)
             continue;
 
+        memset(&pool_config, 0, sizeof(pool_config));
 
         if (i < GDMA_MAX_CHN_NUMS)
         {
@@ -341,39 +343,57 @@ static k_s32 dma_vb_init(k_dma_chn_attr_u attr[8], k_u8 planar[8])
 
             if (i == DMA_CHN0)
             {
-                config.comm_pool[i].blk_cnt = (DMA_BUFF_NUM + 1);
-                config.comm_pool[i].mode = VB_REMAP_MODE_NOCACHE;
-                config.comm_pool[i].blk_size = size;
+                pool_config.blk_cnt = (DMA_BUFF_NUM + 1);
+                pool_config.blk_size = size;
+                pool_config.mode = VB_REMAP_MODE_NOCACHE;
             }
             else if (i == DMA_CHN1)
             {
-                config.comm_pool[i].blk_cnt = (DMA_BUFF_NUM + 1);
-                config.comm_pool[i].mode = VB_REMAP_MODE_NOCACHE;
-                config.comm_pool[i].blk_size = size / 2 * 3;
+                pool_config.blk_cnt = (DMA_BUFF_NUM + 1);
+                pool_config.blk_size = size / 2 * 3;
+                pool_config.mode = VB_REMAP_MODE_NOCACHE;
             }
             if (i == DMA_CHN2)
             {
-                config.comm_pool[i].blk_cnt = (DMA_BUFF_NUM + 1);
-                config.comm_pool[i].mode = VB_REMAP_MODE_NOCACHE;
-                config.comm_pool[i].blk_size = size / 2 * 3;
+                pool_config.blk_cnt = (DMA_BUFF_NUM + 1);
+                pool_config.blk_size = size / 2 * 3;
+                pool_config.mode = VB_REMAP_MODE_NOCACHE;
             }
-            gdma_size[i] = config.comm_pool[i].blk_size;
+            gdma_size[i] = pool_config.blk_size;
         }
         else
         {
-            config.comm_pool[i].blk_cnt = DMA_BUFF_NUM + 1;
-            config.comm_pool[i].mode = VB_REMAP_MODE_NOCACHE;
+
+            pool_config.blk_cnt = (DMA_BUFF_NUM + 1);
+            pool_config.mode = VB_REMAP_MODE_NOCACHE;
+
             if (attr[i].sdma_attr.data_mode == DIMENSION1)
             {
-                config.comm_pool[i].blk_size = attr[i].sdma_attr.line_size;
+                pool_config.blk_size = attr[i].sdma_attr.line_size;
             }
             else
             {
-                config.comm_pool[i].blk_size = (attr[i].sdma_attr.line_size + attr[i].sdma_attr.line_space) *
+                pool_config.blk_size = (attr[i].sdma_attr.line_size + attr[i].sdma_attr.line_space) *
                                                attr[i].sdma_attr.line_num;
             }
         }
+
+        private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+        printf("%s dma chn %d,poolid %d\n", __func__,i,private_pool_id);
+        dma_attach_pool_id[i] = private_pool_id;
     }
+
+    return K_SUCCESS;
+}
+
+static k_s32 dma_vb_init(k_dma_chn_attr_u attr[8], k_u8 planar[8])
+{
+    k_s32 ret;
+    k_vb_config config;
+
+    memset(&config, 0, sizeof(config));
+    config.max_pool_cnt = 64;
+
     ret = kd_mpi_vb_set_config(&config);
     printf("\n");
     printf("---------------------dma sample test---------------------\n");
@@ -408,7 +428,8 @@ static k_s32 sample_dma_get_blk(k_s32 size, k_video_frame_info *df_info, k_u8 ch
     k_u64 phys_addr = 0;
     k_u8 *virt_addr = NULL;
 
-    handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, size, NULL);
+    //handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, size, NULL);
+    handle = kd_mpi_vb_get_block(dma_attach_pool_id[chn_num], size, NULL);
     if (handle == VB_INVALID_HANDLE)
     {
         printf("%s get vb block error\n", __func__);
@@ -836,6 +857,11 @@ int main(void)
         return -1;
     }
 
+    if (dma_vb_create_pool(chn_attr, planar))
+    {
+        return -1;
+    }
+
     sample_dma_prepare_data(chn_attr, planar, df_info);
 
     ret = kd_mpi_dma_set_dev_attr(&dev_attr);
@@ -868,6 +894,13 @@ int main(void)
     }
 
     /* DMA_CHN0 prepare */
+    ret = kd_mpi_dma_attach_vb_pool(DMA_CHN0, dma_attach_pool_id[DMA_CHN0]);
+    if (ret != K_SUCCESS)
+    {
+        printf("dma attach vb_pool error\r\n");
+        goto exit_label;
+    }
+
     ret = kd_mpi_dma_set_chn_attr(DMA_CHN0, &chn_attr[DMA_CHN0]);
     if (ret != K_SUCCESS)
     {
@@ -886,6 +919,13 @@ int main(void)
         goto exit_label;
 
     /* DMA_CHN1 prepare */
+    ret = kd_mpi_dma_attach_vb_pool(DMA_CHN1, dma_attach_pool_id[DMA_CHN1]);
+    if (ret != K_SUCCESS)
+    {
+        printf("dma attach vb_pool error\r\n");
+        goto exit_label;
+    }
+
     ret = kd_mpi_dma_set_chn_attr(DMA_CHN1, &chn_attr[DMA_CHN1]);
     if (ret != K_SUCCESS)
     {
@@ -904,6 +944,13 @@ int main(void)
         goto exit_label;
 
     /* DMA_CHN1 prepare */
+    ret = kd_mpi_dma_attach_vb_pool(DMA_CHN2, dma_attach_pool_id[DMA_CHN2]);
+    if (ret != K_SUCCESS)
+    {
+        printf("dma attach vb_pool error\r\n");
+        goto exit_label;
+    }
+
     ret = kd_mpi_dma_set_chn_attr(DMA_CHN2, &chn_attr[DMA_CHN2]);
     if (ret != K_SUCCESS)
     {
@@ -922,6 +969,13 @@ int main(void)
         goto exit_label;
 
     /* DMA_CHN4 prepare*/
+    ret = kd_mpi_dma_attach_vb_pool(DMA_CHN4, dma_attach_pool_id[DMA_CHN4]);
+    if (ret != K_SUCCESS)
+    {
+        printf("dma attach vb_pool error\r\n");
+        goto exit_label;
+    }
+
     ret = kd_mpi_dma_set_chn_attr(DMA_CHN4, &chn_attr[DMA_CHN4]);
     if (ret != K_SUCCESS)
     {
@@ -940,6 +994,13 @@ int main(void)
         goto exit_label;
 
     /* DMA_CHN5 prepare*/
+    ret = kd_mpi_dma_attach_vb_pool(DMA_CHN5, dma_attach_pool_id[DMA_CHN5]);
+    if (ret != K_SUCCESS)
+    {
+        printf("dma attach vb_pool error\r\n");
+        goto exit_label;
+    }
+
     ret = kd_mpi_dma_set_chn_attr(DMA_CHN5, &chn_attr[DMA_CHN5]);
     if (ret != K_SUCCESS)
     {
@@ -1101,6 +1162,12 @@ int main(void)
         goto exit_label;
     }
 
+    kd_mpi_dma_detach_vb_pool(DMA_CHN0);
+    kd_mpi_dma_detach_vb_pool(DMA_CHN1);
+    kd_mpi_dma_detach_vb_pool(DMA_CHN2);
+    kd_mpi_dma_detach_vb_pool(DMA_CHN4);
+    kd_mpi_dma_detach_vb_pool(DMA_CHN5);
+
     ret = kd_mpi_dma_stop_dev();
     if (ret != K_SUCCESS)
     {
@@ -1110,6 +1177,13 @@ int main(void)
 
 exit_label:
     sample_dma_release_data(chn_attr, planar, df_info);
+
+    for (int i = 0; i < 8;i ++){
+        if (dma_attach_pool_id[i] != VB_INVALID_POOLID) {
+            kd_mpi_vb_destory_pool(dma_attach_pool_id[i]);
+            dma_attach_pool_id[i] = VB_INVALID_POOLID;
+        }
+    }
 
     dma_vb_exit();
     for (int i = 0; i < 8; i++) {

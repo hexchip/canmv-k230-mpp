@@ -98,7 +98,7 @@ static k_s32 dma_chn_attr_init(k_dma_chn_attr_u attr[8], k_bool gen_calibration)
     return K_SUCCESS;
 }
 
-int sample_dv_dma_init(k_gdma_rotation_e *dma_rotation, k_bool gen_calibration)
+int sample_dv_dma_init(k_gdma_rotation_e *dma_rotation, k_bool gen_calibration,k_u32 *gdma_pool_id)
 {
     k_s32 ret;
 
@@ -127,27 +127,42 @@ int sample_dv_dma_init(k_gdma_rotation_e *dma_rotation, k_bool gen_calibration)
         goto err_return;
     }
 
-    ret = kd_mpi_dma_set_chn_attr(DMA_CHN0, &chn_attr[DMA_CHN0]);
-    if (ret != K_SUCCESS) {
-        printf("set chn attr error\r\n");
-        goto err_dma_dev;
-    }
     for (int i = 0; i < 2; i++) {
         dma_ch[i] = kd_mpi_dma_request_chn(GDMA_TYPE);
         if (dma_ch[i] < 0)
             goto err_dma_dev;
     }
+
+    ret = kd_mpi_dma_attach_vb_pool(dma_ch[DMA_CHN0], gdma_pool_id[0]);
+    if (ret != K_SUCCESS) {
+        printf("attach vb pool error\r\n");
+        goto err_dma_dev;
+    }
+
+    ret = kd_mpi_dma_set_chn_attr(dma_ch[DMA_CHN0], &chn_attr[DMA_CHN0]);
+    if (ret != K_SUCCESS) {
+        printf("set chn attr error\r\n");
+        goto err_dma_dev;
+    }
+
     ret = kd_mpi_dma_start_chn(dma_ch[DMA_CHN0]);
     if (ret != K_SUCCESS) {
         printf("start chn error\r\n");
         goto err_dma_dev;
     }
 
-    ret = kd_mpi_dma_set_chn_attr(DMA_CHN1, &chn_attr[DMA_CHN1]);
+    ret = kd_mpi_dma_attach_vb_pool(dma_ch[DMA_CHN1], gdma_pool_id[1]);
+    if (ret != K_SUCCESS) {
+        printf("attach vb pool error\r\n");
+        goto err_dma_dev;
+    }
+
+    ret = kd_mpi_dma_set_chn_attr(dma_ch[DMA_CHN1], &chn_attr[DMA_CHN1]);
     if (ret != K_SUCCESS) {
         printf("set chn attr error\r\n");
         goto err_dma_dev;
     }
+
     ret = kd_mpi_dma_start_chn(dma_ch[DMA_CHN1]);
     if (ret != K_SUCCESS) {
         printf("start chn error\r\n");
@@ -168,6 +183,9 @@ int sample_dv_dma_init(k_gdma_rotation_e *dma_rotation, k_bool gen_calibration)
     if (ret != K_SUCCESS) {
         printf("stop chn error\r\n");
     }
+
+    kd_mpi_dma_detach_vb_pool(dma_ch[DMA_CHN0]);
+    kd_mpi_dma_detach_vb_pool(dma_ch[DMA_CHN1]);
 
     for (int i = 0; i < 2; i++) {
         if (dma_ch[i] >= 0)

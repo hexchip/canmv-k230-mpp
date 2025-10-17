@@ -44,13 +44,11 @@
 #define ISP_CHN2_HEIGHT             (1080)
 
 #define VICAP_OUTPUT_BUF_NUM        6
-#define NONAI_2D_BUF_NUM            6
+#define NONAI_2D_CHN_BUF_NUM        2
 
-#define TOTAL_ENABLE_2D_CH_NUMS     6
-#define NONAI_2D_RGB_CH             4
+#define TOTAL_ENABLE_2D_CH_NUMS     2
 #define NONAI_2D_BIND_CH_0          0
 #define NONAI_2D_BIND_CH_1          1
-#define NONAI_2D_BIND_CH_2          2
 
 #define DW200_CHN0_INPUT_WIDTH 1280
 #define DW200_CHN0_INPUT_HEIGHT 720
@@ -73,6 +71,8 @@
 
 static k_u32 g_vo_pool_id;
 static k_u8 exit_flag = 0;
+static k_u32 nonai_2d_attach_pool_id[TOTAL_ENABLE_2D_CH_NUMS];
+static k_u32 dw_attach_pool_id[3];
 
 // static k_vo_layer g_vo_layer = K_VO_LAYER1;
 
@@ -130,24 +130,6 @@ static int sample_vb_init(void)
     config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;
     config.comm_pool[3].blk_size = VICAP_ALIGN_UP((sride * ISP_CHN0_HEIGHT * 3 ), 0x1000);
 
-    //VB for nonai_2d
-    config.comm_pool[4].blk_cnt = NONAI_2D_BUF_NUM;
-    config.comm_pool[4].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[4].blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3), 0x1000);
-
-    // DW output vb CHN 0 vb mem = 11,059,200
-    config.comm_pool[5].blk_cnt = DW200_CHN0_VB_NUM;
-    config.comm_pool[5].blk_size = VICAP_ALIGN_UP((DW200_CHN0_OUTPUT_WIDTH * DW200_CHN0_OUTPUT_HEIGHT * 3), 0x1000);
-    config.comm_pool[5].mode = VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[6].blk_cnt = DW200_CHN1_VB_NUM;
-    config.comm_pool[6].blk_size = VICAP_ALIGN_UP((DW200_CHN1_OUTPUT_WIDTH * DW200_CHN1_OUTPUT_HEIGHT * 3), 0x1000);
-    config.comm_pool[6].mode = VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[7].blk_cnt = DW200_CHN2_VB_NUM;
-    config.comm_pool[7].blk_size = VICAP_ALIGN_UP((DW200_CHN1_OUTPUT_WIDTH * DW200_CHN1_OUTPUT_HEIGHT * 3), 0x1000);
-    config.comm_pool[7].mode = VB_REMAP_MODE_NOCACHE;
-
 
     ret = kd_mpi_vb_set_config(&config);
     if (ret) {
@@ -181,6 +163,56 @@ static int sample_vb_init(void)
     return ret;
 }
 
+static k_u32 nonai_2d_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+
+    pool_config.blk_cnt =  NONAI_2D_CHN_BUF_NUM;
+    pool_config.blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3), 0x1000);
+
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s nonai_2d  poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_u32 dw_vb_create_pool(int chn)
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+
+    if (chn == 0){
+        pool_config.blk_cnt =  DW200_CHN0_VB_NUM;
+        pool_config.blk_size = VICAP_ALIGN_UP((DW200_CHN0_OUTPUT_WIDTH * DW200_CHN0_OUTPUT_HEIGHT * 3), 0x1000);
+    }
+    else if (chn == 1){
+        pool_config.blk_cnt =  DW200_CHN1_VB_NUM;
+        pool_config.blk_size = VICAP_ALIGN_UP((DW200_CHN1_OUTPUT_WIDTH * DW200_CHN2_OUTPUT_HEIGHT * 3), 0x1000);
+    }
+    else if (chn == 2){
+        pool_config.blk_cnt =  DW200_CHN2_VB_NUM;
+        pool_config.blk_size = VICAP_ALIGN_UP((DW200_CHN2_OUTPUT_WIDTH * DW200_CHN2_OUTPUT_HEIGHT * 3), 0x1000);
+    }
+    else{
+        return 0;
+    }
+
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s dw  poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_s32 vb_destory_pool(k_u32 pool_id)
+{
+    kd_mpi_vb_destory_pool(pool_id);
+    return 0;
+}
 
 int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
 {
@@ -214,8 +246,8 @@ int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     dev_attr.acq_win.width = ISP_CHN2_WIDTH;
     dev_attr.acq_win.height = ISP_CHN2_HEIGHT;
     dev_attr.input_type = VICAP_INPUT_TYPE_SENSOR;
-    dev_attr.mode = VICAP_WORK_ONLINE_MODE;  
-    
+    dev_attr.mode = VICAP_WORK_ONLINE_MODE;
+
 
     dev_attr.pipe_ctrl.data = 0xFFFFFFFF;
     dev_attr.pipe_ctrl.bits.af_enable = 0;
@@ -253,7 +285,7 @@ int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     chn_attr.chn_enable = K_TRUE;
     chn_attr.pix_format = PIXEL_FORMAT_YUV_SEMIPLANAR_420 ;//PIXEL_FORMAT_RGB_888;
     chn_attr.buffer_size = VICAP_ALIGN_UP((DW200_CHN2_OUTPUT_WIDTH * DW200_CHN2_OUTPUT_HEIGHT * 3  / 2 ), VICAP_ALIGN_1K);
-    
+
 
     chn_attr.buffer_num = VICAP_OUTPUT_BUF_NUM;//at least 3 buffers for isp
     vicap_chn = VICAP_CHN_ID_0;
@@ -562,7 +594,7 @@ static void sample_vo_init(k_connector_type type)
         info.offset.y = 0;//(1920-h)/2;
         vo_creat_layer_test(K_VO_LAYER1, &info);
 #endif
-        
+
 #if DW_DEV1_USE_RGB
          // osd0 init
         osd.act_size.width = DW200_CHN1_OUTPUT_WIDTH ;
@@ -603,15 +635,13 @@ static k_s32 nonai_2d_init()
 
     for(i = 0; i < TOTAL_ENABLE_2D_CH_NUMS; i++)
     {
+        nonai_2d_attach_pool_id[i] = nonai_2d_vb_create_pool();
+
+        kd_mpi_nonai_2d_attach_vb_pool(i,nonai_2d_attach_pool_id[i]);
+
         attr_2d.mode = K_NONAI_2D_CALC_MODE_CSC;
-        if(i == NONAI_2D_RGB_CH)
-        {
-            attr_2d.dst_fmt = PIXEL_FORMAT_RGB_888_PLANAR;
-        }
-        else
-        {
-            attr_2d.dst_fmt = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
-        }
+        attr_2d.dst_fmt = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
+
         // kd_mpi_nonai_2d_init(i, &attr_2d);
         ret = kd_mpi_nonai_2d_create_chn(i, &attr_2d);
         if(ret != 0 )
@@ -633,8 +663,11 @@ static k_s32 nonai_2d_exit()
     for(i = 0; i < TOTAL_ENABLE_2D_CH_NUMS; i++)
     {
         kd_mpi_nonai_2d_stop_chn(i);
+        kd_mpi_nonai_2d_detach_vb_pool(nonai_2d_attach_pool_id[i]);
         kd_mpi_nonai_2d_destroy_chn(i);
+        vb_destory_pool(nonai_2d_attach_pool_id[i]);
     }
+
 
     ret = kd_mpi_nonai_2d_close();
     CHECK_RET(ret, __func__, __LINE__);
@@ -656,7 +689,6 @@ static k_s32 sample_dw200_init(void)
     k_s32 ret = 0;
     struct k_dw_settings dw0_settings;
     struct k_dw_settings dw1_settings;
-
 
     memset(&dw0_settings, 0, sizeof(struct k_dw_settings));
     memset(&dw1_settings, 0, sizeof(struct k_dw_settings));
@@ -737,12 +769,16 @@ static k_s32 sample_dw200_init(void)
     dw1_settings.crop[0].top = 0;
 #endif
 
+    dw_attach_pool_id[0] = dw_vb_create_pool(0);
+    dw0_settings.attach_pool_id = dw_attach_pool_id[0];
     ret = kd_mpi_dw_init(&dw0_settings);
     if(ret)
     {
         printf("kd_mpi_dw_init init o failed \n");
     }
 
+    dw_attach_pool_id[1] = dw_vb_create_pool(1);
+    dw1_settings.attach_pool_id = dw_attach_pool_id[1];
     ret = kd_mpi_dw_init(&dw1_settings);
     if(ret)
     {
@@ -756,6 +792,9 @@ static void dw_exit(void)
 {
     kd_mpi_dw_exit(DEWARP_DEV_ID);
     kd_mpi_dw_exit(DEWARP_DEV_ID + 1);
+
+    vb_destory_pool(dw_attach_pool_id[0]);
+    vb_destory_pool(dw_attach_pool_id[1]);
 }
 
 
@@ -769,7 +808,7 @@ static void sample_bind()
     k_mpp_chn dw_mpp_chn;
     k_mpp_chn vo_mpp_chn;
 
-    // pipe 1 
+    // pipe 1
     vi_mpp_chn.mod_id = K_ID_VI;
     vi_mpp_chn.dev_id = 0;
     vi_mpp_chn.chn_id = 0;
@@ -791,13 +830,13 @@ static void sample_bind()
     ret = kd_mpi_sys_bind(&dw_mpp_chn, &vo_mpp_chn);
     CHECK_RET(ret, __func__, __LINE__);
 
-    // pipe 2 
+    // pipe 2
     vi_mpp_chn.mod_id = K_ID_VI;
     vi_mpp_chn.dev_id = 1;
     vi_mpp_chn.chn_id = 0;
     nonai_2d_mpp_chn.mod_id = K_ID_NONAI_2D;
     nonai_2d_mpp_chn.dev_id = 0;
-    nonai_2d_mpp_chn.chn_id = 1;
+    nonai_2d_mpp_chn.chn_id = NONAI_2D_BIND_CH_1;
     ret = kd_mpi_sys_bind(&vi_mpp_chn, &nonai_2d_mpp_chn);
     CHECK_RET(ret, __func__, __LINE__);
 
@@ -836,7 +875,7 @@ static void sample_unbind()
     k_mpp_chn dw_mpp_chn;
     k_mpp_chn vo_mpp_chn;
 
-    // pipe 1 
+    // pipe 1
     vi_mpp_chn.mod_id = K_ID_VI;
     vi_mpp_chn.dev_id = 0;
     vi_mpp_chn.chn_id = 0;
@@ -860,13 +899,13 @@ static void sample_unbind()
     ret = kd_mpi_sys_unbind(&dw_mpp_chn, &vo_mpp_chn);
     CHECK_RET(ret, __func__, __LINE__);
 
-    // pipe 2 
+    // pipe 2
     vi_mpp_chn.mod_id = K_ID_VI;
     vi_mpp_chn.dev_id = 1;
     vi_mpp_chn.chn_id = 0;
     nonai_2d_mpp_chn.mod_id = K_ID_NONAI_2D;
     nonai_2d_mpp_chn.dev_id = 0;
-    nonai_2d_mpp_chn.chn_id = 1;
+    nonai_2d_mpp_chn.chn_id = NONAI_2D_BIND_CH_1;
     ret = kd_mpi_sys_unbind(&vi_mpp_chn, &nonai_2d_mpp_chn);
     CHECK_RET(ret, __func__, __LINE__);
 
@@ -886,7 +925,7 @@ static void sample_unbind()
     vi_mpp_chn.mod_id = K_ID_VI;
     vi_mpp_chn.dev_id = 2;
     vi_mpp_chn.chn_id = 0;
-    
+
 
     vo_mpp_chn.mod_id = K_ID_VO;
     vo_mpp_chn.dev_id = 0;
@@ -901,7 +940,7 @@ static void sample_unbind()
 int main(int argc, char *argv[])
 {
     int ret;
-    
+
     k_video_frame_info dump_info;
 
     // vb init
@@ -913,10 +952,10 @@ int main(int argc, char *argv[])
     // vo init
     sample_vo_init(LT9611_MIPI_4LAN_1920X1080_60FPS);
 
-    // init 2d 
+    // init 2d
     nonai_2d_init();
 
-    // init bind 
+    // init bind
     sample_bind();
 
     if(1 == 1)
@@ -928,7 +967,7 @@ int main(int argc, char *argv[])
             goto vicap_init_error;
         }
     }
-    
+
 
     // three mcm init
     ret = sample_vicap_ahd_init(VICAP_DEV_ID_0, XS9950_MIPI_CSI0_1280X720_30FPS_YUV422);
@@ -937,7 +976,7 @@ int main(int argc, char *argv[])
         printf("vicap VICAP_DEV_ID_0 init failed \n");
         goto vicap_init_error;
     }
-    
+
     // ret = sample_vicap_ahd_init(VICAP_DEV_ID_1, XS9950_MIPI_CSI1_1280X720_30FPS_YUV422);
     // if(ret < 0)
     // {
@@ -950,7 +989,7 @@ int main(int argc, char *argv[])
     sample_vicap_stream(VICAP_DEV_ID_2, K_TRUE);
     sample_vicap_stream(VICAP_DEV_ID_0, K_TRUE);
     // sample_vicap_stream(VICAP_DEV_ID_1, K_TRUE);
-    
+
 
     char select;
     int dump_count = 0;
@@ -979,7 +1018,7 @@ int main(int argc, char *argv[])
                 data_size = dump_info.v_frame.width * dump_info.v_frame.height * 3;
 
                 virt_addr = kd_mpi_sys_mmap(dump_info.v_frame.phys_addr[0], data_size);
-                
+
                 snprintf(filename, sizeof(filename), "dev_%02d_chn_%02d_%dx%d_%04d.%s", \
                         device_id, 0, dump_info.v_frame.width, dump_info.v_frame.height, dump_count, "yuv444");
                 dump_count++;
@@ -996,7 +1035,7 @@ int main(int argc, char *argv[])
                     printf("sensor 0：sample_vicap...kd_mpi_vicap_dump_release failed.\n");
                     continue;
                 }
-  
+
                 break;
             default:
                 break;
@@ -1008,7 +1047,7 @@ int main(int argc, char *argv[])
     sample_vicap_stream(VICAP_DEV_ID_2 , K_FALSE);
     sample_vicap_stream(VICAP_DEV_ID_0 , K_FALSE);
     // sample_vicap_stream(VICAP_DEV_ID_1 , K_FALSE);
-    
+
 
 
     usleep(1000 * 34);

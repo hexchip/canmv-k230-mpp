@@ -179,6 +179,31 @@ k_s32 kd_mpi_dma_request_chn(k_u8 dma_type);
  */
 k_s32 kd_mpi_dma_release_chn(k_u8 chn_num);
 
+/**
+ * @brief attach vb pool
+ *
+ * @param [in] chn_num Channel number
+ * @param [in] vb pool id
+ * @return k_s32
+ * @retval 0 success
+ * @retval "not 0" see err code
+ * @see K_ERR_CODE_E
+ * @note It can be set on the fly
+ */
+k_s32 kd_mpi_dma_attach_vb_pool(k_u8 chn_num, k_u32 pool_id);
+
+/**
+ * @brief detach vb pool
+ *
+ * @param [in] chn_num Channel number
+ * @return k_s32
+ * @retval 0 success
+ * @retval "not 0" see err code
+ * @see K_ERR_CODE_E
+ * @note It can be set on the fly
+ */
+k_s32 kd_mpi_dma_detach_vb_pool(k_u8 chn_num);
+
 /** @} */ /** <!-- ==== DMA End ==== */
 
 #ifdef __cplusplus

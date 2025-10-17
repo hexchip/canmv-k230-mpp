@@ -504,13 +504,13 @@ int main(int argc, char *argv[])
 
     vdec_debug("input file size %d\n", g_vdec_conf[ch].file_size);
 
+    //attach pool vb
+    kd_mpi_vdec_attach_vb_pool(ch,g_vdec_conf[ch].output_pool_id);
+
     attr.pic_width = MAX_WIDTH;
     attr.pic_height = MAX_HEIGHT;
-    attr.frame_buf_cnt = OUTPUT_BUF_CNT;
-    attr.frame_buf_size = FRAME_BUF_SIZE;
     attr.stream_buf_size = STREAM_BUF_SIZE;
     attr.type = type;
-	attr.frame_buf_pool_id = g_vdec_conf[ch].output_pool_id;
     ret = kd_mpi_vdec_create_chn(ch, &attr);
     CHECK_RET(ret, __func__, __LINE__);
 
@@ -535,6 +535,9 @@ int main(int argc, char *argv[])
             kd_mpi_vo_disable_video_layer(BIND_VO_LAYER);
 
             ret = kd_mpi_vdec_stop_chn(ch);
+            CHECK_RET(ret, __func__, __LINE__);
+
+            ret = kd_mpi_vdec_detach_vb_pool(ch);
             CHECK_RET(ret, __func__, __LINE__);
 
             ret = kd_mpi_vdec_destroy_chn(ch);

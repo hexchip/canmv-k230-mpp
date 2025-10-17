@@ -126,6 +126,26 @@ static void _help()
     av_debug("-time: test sampe_av_sync time\n");
 }
 
+static k_u32 vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = OUTPUT_BUF_CNT;
+    pool_config.blk_size = STREAM_BUF_SIZE;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
+
+static k_s32 vb_destory_pool(k_u32 pool_id)
+{
+    kd_mpi_vb_destory_pool(pool_id);
+    return 0;
+}
+
 k_s32 av_sample_vb_init(k_bool enable_cache, k_u32 sample_rate)
 {
     if (g_vb_init)
@@ -139,28 +159,12 @@ k_s32 av_sample_vb_init(k_bool enable_cache, k_u32 sample_rate)
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
 
-    config.comm_pool[0].blk_cnt = 150;
-    config.comm_pool[0].blk_size = sample_rate * 2 * 4 / AUDIO_PERSEC_DIV_NUM;
-    config.comm_pool[0].mode = enable_cache ? VB_REMAP_MODE_CACHED : VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[1].blk_cnt = 2;
-    config.comm_pool[1].blk_size = sample_rate * 2 * 4 / AUDIO_PERSEC_DIV_NUM * 2; // ao use
-    config.comm_pool[1].mode = enable_cache ? VB_REMAP_MODE_CACHED : VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[2].blk_cnt = 1;
-    config.comm_pool[2].blk_size = sample_rate * 2 * 4 * (SAVE_PCM_SECOND + 1); // save data to memory ,申请大点(+1s)，否则mmz_userdev_mmap会崩溃,wav文件头
-    config.comm_pool[2].mode = enable_cache ? VB_REMAP_MODE_CACHED : VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[3].blk_cnt = INPUT_BUF_CNT * ch_cnt;
-    config.comm_pool[3].blk_size = FRAME_BUF_SIZE;
-    config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[4].blk_cnt = OUTPUT_BUF_CNT * ch_cnt;
-    config.comm_pool[4].blk_size = STREAM_BUF_SIZE;
-    config.comm_pool[4].mode = VB_REMAP_MODE_NOCACHE;
+    config.comm_pool[0].blk_cnt = INPUT_BUF_CNT * ch_cnt;
+    config.comm_pool[0].blk_size = FRAME_BUF_SIZE;
+    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
 
     int blk_total_size = 0;
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 1; i++)
     {
         blk_total_size += config.comm_pool[i].blk_cnt * config.comm_pool[i].blk_size;
     }
@@ -458,6 +462,7 @@ static void *_test_ai_aenc_file_sysbind(void *arg)
 int main(int argc, char const *argv[])
 {
     k_vicap_sensor_type sensor_type = SENSOR_TYPE_MAX;
+    k_u32 venc_attach_pool_id = 0;
 
 #ifdef ENABLE_MPI
 
@@ -564,6 +569,10 @@ int main(int argc, char const *argv[])
     g_venc_conf[ch].input_frames = 0;
     g_venc_conf[ch].output_frames = 30;
 
+
+    venc_attach_pool_id = vb_create_pool();
+    kd_mpi_venc_attach_vb_pool(ch,venc_attach_pool_id);
+
     k_venc_chn_attr attr;
     switch (k_payload)
     {
@@ -572,8 +581,6 @@ int main(int argc, char const *argv[])
         memset(&attr, 0, sizeof(attr));
         attr.venc_attr.pic_width = g_venc_conf[ch].chn_width;
         attr.venc_attr.pic_height = g_venc_conf[ch].chn_height;
-        attr.venc_attr.stream_buf_size = STREAM_BUF_SIZE;
-        attr.venc_attr.stream_buf_cnt = OUTPUT_BUF_CNT;
 
         attr.rc_attr.rc_mode = K_VENC_RC_MODE_CBR;
         attr.rc_attr.cbr.src_frame_rate = 30;
@@ -589,8 +596,6 @@ int main(int argc, char const *argv[])
         memset(&attr, 0, sizeof(attr));
         attr.venc_attr.pic_width = WIDTH;
         attr.venc_attr.pic_height = HEIGHT;
-        attr.venc_attr.stream_buf_size = STREAM_BUF_SIZE;
-        attr.venc_attr.stream_buf_cnt = OUTPUT_BUF_CNT;
 
         attr.venc_attr.type = K_PT_JPEG;
         attr.rc_attr.rc_mode = K_VENC_RC_MODE_MJPEG_FIXQP;
@@ -604,8 +609,6 @@ int main(int argc, char const *argv[])
         memset(&attr, 0, sizeof(attr));
         attr.venc_attr.pic_width = WIDTH;
         attr.venc_attr.pic_height = HEIGHT;
-        attr.venc_attr.stream_buf_size = STREAM_BUF_SIZE;
-        attr.venc_attr.stream_buf_cnt = OUTPUT_BUF_CNT;
 
         attr.rc_attr.rc_mode = K_VENC_RC_MODE_CBR;
         attr.rc_attr.cbr.src_frame_rate = 30;
@@ -644,6 +647,7 @@ int main(int argc, char const *argv[])
 
     sample_vicap_stop(ch);
     kd_mpi_venc_stop_chn(ch);
+    kd_mpi_venc_detach_vb_pool(ch);
     kd_mpi_venc_destroy_chn(ch);
 
     kd_mpi_ai_disable_chn(ai_dev, ai_chn);
@@ -661,6 +665,7 @@ int main(int argc, char const *argv[])
     ret = kd_mpi_venc_close_fd();
     CHECK_RET(ret, __func__, __LINE__);
 
+    vb_destory_pool(venc_attach_pool_id);
     sample_vb_exit();
 
     av_debug("sample av done!\n");

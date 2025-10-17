@@ -34,6 +34,8 @@ static volatile bool g_app_run = true;
 
 static k_vicap_dev vicap_dev_id = VICAP_DEV_ID_2;
 
+static k_s32 venc_pool_id = VB_INVALID_POOLID;
+
 // ============================================================================
 // Utility Functions
 // ============================================================================
@@ -70,11 +72,6 @@ static k_s32 sample_vb_init(void)
     config.comm_pool[1].blk_cnt  = 6;
     config.comm_pool[1].mode     = VB_REMAP_MODE_NOCACHE;
     config.comm_pool[1].blk_size = VB_ALIGN_UP(ISP_WIDTH * ISP_HEIGHT * 3 / 2, 4096);
-
-    // VENC encoded stream output buffer
-    config.comm_pool[2].blk_cnt  = 10;
-    config.comm_pool[2].mode     = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[2].blk_size = VB_ALIGN_UP(VENC_WIDTH * VENC_HEIGHT, 4096);
 
     k_s32 ret = kd_mpi_vb_set_config(&config);
     if (ret) {
@@ -180,15 +177,30 @@ static k_s32 sample_vicap_init(k_vicap_dev dev_chn)
  */
 static k_s32 sample_venc_init(void)
 {
+    k_s32 poolid;
+
     k_venc_chn_attr attr;
     memset(&attr, 0, sizeof(attr));
 
-    attr.venc_attr.pic_width       = VENC_WIDTH;
-    attr.venc_attr.pic_height      = VENC_HEIGHT;
-    attr.venc_attr.stream_buf_size = VB_ALIGN_UP(VENC_WIDTH * VENC_HEIGHT, 4096);
-    attr.venc_attr.stream_buf_cnt  = 2;
-    attr.venc_attr.type            = K_PT_JPEG;
+    venc_pool_id = VB_INVALID_POOLID;
 
+    poolid = kd_mpi_vb_create_pool_ex(VB_ALIGN_UP(VENC_WIDTH * VENC_HEIGHT, 4096), 4, VB_REMAP_MODE_NOCACHE);
+    if (VB_INVALID_POOLID == poolid) {
+        printf("ERROR: create pool failed\n");
+        return -1;
+    }
+
+    if (K_SUCCESS != kd_mpi_venc_attach_vb_pool(VENC_CH_ID_0, poolid)) {
+        printf("ERROR: attach venc pool failed\n");
+
+        kd_mpi_vb_destory_pool(poolid);
+        return -2;
+    }
+    venc_pool_id = poolid;
+
+    attr.venc_attr.type                     = K_PT_JPEG;
+    attr.venc_attr.pic_width                = VENC_WIDTH;
+    attr.venc_attr.pic_height               = VENC_HEIGHT;
     attr.rc_attr.rc_mode                    = K_VENC_RC_MODE_MJPEG_FIXQP;
     attr.rc_attr.mjpeg_fixqp.src_frame_rate = 30;
     attr.rc_attr.mjpeg_fixqp.dst_frame_rate = 30;
@@ -436,6 +448,8 @@ cleanup_venc:
     printf("Deinitializing VENC...\n");
     kd_mpi_venc_stop_chn(VENC_CH_ID_0);
     kd_mpi_venc_destroy_chn(VENC_CH_ID_0);
+    kd_mpi_venc_detach_vb_pool(VENC_CH_ID_0);
+    kd_mpi_vb_destory_pool(venc_pool_id);
 cleanup_vicap:
     printf("Deinitializing VICAP...\n");
     kd_mpi_vicap_deinit(VICAP_DEV_ID_0);

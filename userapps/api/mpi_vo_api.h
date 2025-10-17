@@ -286,29 +286,6 @@ k_s32 kd_mpi_vo_set_video_osd_attr(k_vo_osd layer, k_vo_video_osd_attr *attr);
 k_s32 kd_mpi_vo_draw_frame(k_vo_draw_frame *frame);
 
 
-/**
- * @brief turn on writeback
- * @return k_s32
- * @retval 0 success
- * @retval "not 0" see err code
- * @see K_ERR_CODE_E
- * @note
- * - You need to configure writeback first, and then start
- */
-k_s32 kd_mpi_vo_enable_wbc(void);
-
-
-/**
- * @brief turn off writeback
- * @param [in] layer channel number
- * @return k_s32
- * @retval 0 success
- * @retval "not 0" see err code
- * @see K_ERR_CODE_E
- * @note
- * - Can only be turned off when the corresponding writeback is turned on
- */
-k_s32 kd_mpi_vo_disable_wbc(void);
 
 
 /**
@@ -412,8 +389,60 @@ k_s32 kd_mpi_vo_chn_dump_frame(k_u32 chn_num, k_video_frame_info *vf_info, k_u32
  */
 k_s32 kd_mpi_vo_chn_dump_release(k_u32 chn_num, const k_video_frame_info *vf_info);
 
+/**
+ * @brief turn on writeback
+ * @return k_s32
+ * @retval 0 success
+ * @retval "not 0" see err code
+ * @see K_ERR_CODE_E
+ * @note
+ * - You need to configure writeback first, and then start
+ */
+k_s32 kd_mpi_vo_enable_wbc(void);
 
-k_s32 kd_mpi_wbc_dump_frame(k_video_frame_info *vf_info, k_u32 timeout_ms);
+/**
+ * @brief turn off writeback
+ * @param [in] layer channel number
+ * @return k_s32
+ * @retval 0 success
+ * @retval "not 0" see err code
+ * @see K_ERR_CODE_E
+ * @note
+ * - Can only be turned off when the corresponding writeback is turned on
+ */
+k_s32 kd_mpi_vo_disable_wbc(void);
+
+/**  
+ * @brief Dump a video frame from the WriteBack Channel (WBC)  
+ *  
+ * @param [out] vf_info Video frame information obtained from the WBC  
+ * @param [in] timeout_ms Timeout value in milliseconds:  
+ * - -1: Blocking mode (waits indefinitely until a frame is available)  
+ * - 0: Not supported
+ * - >0: Timeout mode (waits for the specified milliseconds for a frame)  
+ * @return k_s32  
+ * @retval 0 Success  
+ * @retval "Non-zero" Error code (see K_ERR_CODE_E for details)  
+ * @note  
+ * - This function retrieves a video frame from the WriteBack Channel.  
+ * - The obtained frame's physical address comes from the internal VideoBuffer (VB) pool.  
+ * - After processing the frame, you MUST call ::kd_mpi_wbc_dump_release to release the VB memory.  
+ * - Ensure the WBC is enabled (via ::kd_mpi_vo_enable_wbc) before calling this function.  
+ */  
+k_s32 kd_mpi_wbc_dump_frame(k_video_frame_info *vf_info, k_u32 timeout_ms);  
+
+/**  
+ * @brief Release a dumped video frame back to the WriteBack Channel (WBC) VB pool  
+ *  
+ * @param [in] vf_info Video frame information obtained from ::kd_mpi_wbc_dump_frame  
+ * @return k_s32  
+ * @retval 0 Success  
+ * @retval "Non-zero" Error code (see K_ERR_CODE_E for details)  
+ * @note  
+ * - This function releases the video frame obtained via ::kd_mpi_wbc_dump_frame.  
+ * - Failing to release frames will cause VB leaks and eventual resource exhaustion.  
+ * - The frame must be released only after it has been processed and is no longer needed.  
+ */  
 k_s32 kd_mpi_wbc_dump_release(const k_video_frame_info *vf_info);
 
 /** @} */ /** <!-- ==== DISPLAY End ==== */

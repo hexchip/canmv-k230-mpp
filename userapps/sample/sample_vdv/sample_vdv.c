@@ -48,6 +48,23 @@
 #include "mpi_connector_api.h"
 
 #define USE_GDMA    1
+static k_u32 gdma_attach_pool_id = VB_INVALID_POOLID;
+
+static k_u32 gdma_vb_create_pool()
+{
+    k_u32 private_pool_id;
+    k_vb_pool_config pool_config;
+    memset(&pool_config, 0, sizeof(pool_config));
+
+    pool_config.blk_cnt =  5;
+    pool_config.blk_size = VICAP_ALIGN_UP((1280 * 720 * 3 / 2), VICAP_ALIGN_1K);
+
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    private_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    printf("%s gdma  poolid %d\n", __func__,private_pool_id);
+
+    return private_pool_id;
+}
 
 static k_u32 sample_vicap_vo_init(void)
 {
@@ -147,11 +164,6 @@ int main(int argc, char *argv[])
     config.comm_pool[0].blk_size = VICAP_ALIGN_UP((1280 * 720 * 3 / 2), VICAP_ALIGN_1K);
     config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
 
-    /* dma vb init */
-    config.comm_pool[1].blk_cnt = 5;
-    config.comm_pool[1].blk_size = VICAP_ALIGN_UP((1280 * 720 * 3 / 2), VICAP_ALIGN_1K);
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
-
     ret = kd_mpi_vb_set_config(&config);
     if (ret) {
         printf("vb_set_config failed ret:%d\n", ret);
@@ -174,6 +186,8 @@ int main(int argc, char *argv[])
         return ret;
     }
     printf("sample_vicap ...kd_mpi_vicap_get_sensor_info\n");
+
+    gdma_attach_pool_id = gdma_vb_create_pool();
 
     memset(&sensor_info, 0, sizeof(k_vicap_sensor_info));
     ret = kd_mpi_vicap_get_sensor_info(sensor_type, &sensor_info);
@@ -250,7 +264,7 @@ int main(int argc, char *argv[])
     vo_layer_vdss_bind_vo_config();
 
     /* dma_init */
-    ret = sample_vdd_dma_init();
+    ret = sample_vdd_dma_init(gdma_attach_pool_id);
     if (ret) {
         printf("sample_dma_init failed\n");
         // goto err_dpu_delete;
@@ -342,6 +356,12 @@ err_exit:
     /*Allow one frame time for the VO to release the VB block*/
     k_u32 display_ms = 1000 / 33;
     usleep(1000 * display_ms);
+
+    if (gdma_attach_pool_id != VB_INVALID_POOLID) {
+        kd_mpi_dma_detach_vb_pool(gdma_attach_pool_id);
+        kd_mpi_vb_destory_pool(gdma_attach_pool_id);
+        gdma_attach_pool_id = VB_INVALID_POOLID;
+    }
 
     ret = kd_mpi_vb_exit();
     if (ret) {

@@ -54,6 +54,7 @@ dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_TIGER) += sample_tiger
 dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_UVC) += sample_uvc
 dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_UVC_DEVICE) += sample_uvc_dev_picture sample_uvc_dev_vicap
 dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_JAMLINK) += sample_jamlink
+dir-$(CONFIG_MPP_ENABLE_USER_SAMPLES_SAMPLE_WBC_DUMP) += sample_wbc_dump
 
 # Add directories to the build system
 dirs := $(sort $(dir-y))
@@ -61,15 +62,15 @@ dirs := $(sort $(dir-y))
 .PHONY: all clean
 
 all:
-	@rm -rf $(MPP_USERAPP_SMAPLE_ELF_DIR)/*
+	$(Q)rm -rf $(MPP_USERAPP_SMAPLE_ELF_DIR)/*
 ifeq ($(CONFIG_MPP_ENABLE_USERAPPS_SAMPLES),y)
-	@$(foreach dir,$(dirs),$(MAKE) -C $(dir) all || exit $?;)
+	$(Q)$(foreach dir,$(dirs),$(MAKE) -C $(dir) all || exit $?;)
 endif
 	@echo "Make MPP userapps samples done."
 
 clean:
-	@rm -rf $(MPP_USERAPP_SMAPLE_ELF_DIR)/*
+	$(Q)rm -rf $(MPP_USERAPP_SMAPLE_ELF_DIR)/*
 ifeq ($(CONFIG_MPP_ENABLE_USERAPPS_SAMPLES),y)
-	@$(foreach dir,$(dirs),$(MAKE) -C $(dir) clean || exit $?;)
+	$(Q)$(foreach dir,$(dirs),$(MAKE) -C $(dir) clean || exit $?;)
 endif
 	@echo "Clean MPP userapps samples done."

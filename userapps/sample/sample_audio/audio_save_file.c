@@ -58,7 +58,7 @@ static int    g_sample_channel = 0;
 static k_vb_blk_handle g_vb_handle;
 static int    g_save_count = 0;
 static char   g_filename[256];
-k_s32 audio_save_init(const char* filename,int sample_rate, int channel_count, k_audio_bit_width bit_width, int total_sec)
+k_s32 audio_save_init(const char* filename,int sample_rate, int channel_count, k_audio_bit_width bit_width, int total_sec,k_u32 pool_id)
 {
     strcpy(g_filename,filename);
     g_save_data_index = 0;
@@ -79,7 +79,7 @@ k_s32 audio_save_init(const char* filename,int sample_rate, int channel_count, k
 
     int nTotalSize = sample_rate * channel * sample_bit_size / 8 * total_sec + sizeof(WAV);
     printf("%s get vb block size:%d\n", __FUNCTION__, nTotalSize);
-    g_vb_handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, nTotalSize, NULL);
+    g_vb_handle = kd_mpi_vb_get_block(pool_id, nTotalSize, NULL);
     if (VB_INVALID_HANDLE == g_vb_handle)
     {
         printf("get vb block size:%d failed\n", nTotalSize);

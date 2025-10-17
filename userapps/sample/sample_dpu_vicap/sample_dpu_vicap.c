@@ -154,6 +154,8 @@ pin_mode_t gpio;
 #if ENABLE_CDC   //USB in big core
 static int fd_usb = -1;
 #endif
+static k_u32 g_ir_pool_id = VB_INVALID_POOLID;
+static k_u32 g_gdma_pool_id[2] = {VB_INVALID_POOLID,VB_INVALID_POOLID};
 
 static k_u32 sample_vicap_vo_init(k_connector_type type)
 {
@@ -264,6 +266,25 @@ static void sample_vicap_disable_vo_layer(k_vo_layer layer)
     kd_mpi_vo_disable_video_layer(layer);
 }
 
+static k_u32 gdma_vb_create_pool(k_u32 blk_cnt,k_u64 blk_size)
+{
+    k_vb_pool_config pool_config;
+    k_u32 gdma_pool_id = VB_INVALID_POOLID;
+
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = blk_cnt;
+    pool_config.blk_size = blk_size;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    gdma_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    if (gdma_pool_id == VB_INVALID_POOLID) {
+        printf("gdma_vb_create_pool err\n");
+        return gdma_pool_id;
+    }
+    printf("gdma_pool_id %d\n", gdma_pool_id);
+
+    return gdma_pool_id;
+}
+
 static k_s32 sample_vicap_vb_init(vicap_device_obj *dev_obj)
 {
     k_s32 ret = 0;
@@ -331,25 +352,6 @@ static k_s32 sample_vicap_vb_init(vicap_device_obj *dev_obj)
         }
     }
 
-    /* dma vb init */
-    config.comm_pool[k].blk_cnt = 3;
-    config.comm_pool[k].blk_size = 1280 * 720;
-    config.comm_pool[k].mode = VB_REMAP_MODE_NOCACHE;
-
-    config.comm_pool[k+1].blk_cnt = 3;
-    config.comm_pool[k+1].blk_size = 1280 * 720 * 3;
-    config.comm_pool[k+1].mode = VB_REMAP_MODE_NOCACHE;
-
-    /* dpu vb init */
-    config.comm_pool[k+2].blk_cnt = (3);
-    config.comm_pool[k+2].blk_size = 5 * 1024 * 1024;
-    config.comm_pool[k+2].mode = VB_REMAP_MODE_NOCACHE;
-
-    //ir
-    config.comm_pool[k+3].blk_cnt = (3);
-    config.comm_pool[k+3].blk_size = IR_BUF_SIZE;//5 * 1024 * 1024;
-    config.comm_pool[k+3].mode = VB_REMAP_MODE_NOCACHE;
-
     ret = kd_mpi_vb_set_config(&config);
     if (ret) {
         printf("vb_set_config failed ret:%d\n", ret);
@@ -371,12 +373,25 @@ static k_s32 sample_vicap_vb_init(vicap_device_obj *dev_obj)
         return ret;
     }
 
+    {
+        k_vb_pool_config pool_config;
+        memset(&pool_config, 0, sizeof(pool_config));
+        pool_config.blk_cnt = 3;
+        pool_config.blk_size = IR_BUF_SIZE;
+        pool_config.mode = VB_REMAP_MODE_NOCACHE;
+        g_ir_pool_id = kd_mpi_vb_create_pool(&pool_config);
+        printf("ir_pool_id %d\n", g_ir_pool_id);
+    }
+
+    g_gdma_pool_id[0] = gdma_vb_create_pool(3, 1280*720);
+    g_gdma_pool_id[1] = gdma_vb_create_pool(3, 1280*720*3);
+
     k_vb_blk_handle handle;
     k_s32 pool_id = 0;
     k_u64 phys_addr = 0;
 
 
-    handle = kd_mpi_vb_get_block(VB_INVALID_POOLID, config.comm_pool[k+3].blk_size, NULL);
+    handle = kd_mpi_vb_get_block(g_ir_pool_id, IR_BUF_SIZE, NULL);
     if (handle == VB_INVALID_HANDLE)
     {
         printf("%s get vb block error\n", __func__);
@@ -400,8 +415,8 @@ static k_s32 sample_vicap_vb_init(vicap_device_obj *dev_obj)
 
     ir_phys_addr = phys_addr;
 
-    printf("%s>phys_addr 0x%lx, blk_size %ld\n", __func__, phys_addr, config.comm_pool[k+3].blk_size);
-    ir_virt_addr = (k_u8 *)kd_mpi_sys_mmap_cached(phys_addr, config.comm_pool[k+3].blk_size);
+    printf("%s>phys_addr 0x%lx, blk_size %d\n", __func__, phys_addr, IR_BUF_SIZE);
+    ir_virt_addr = (k_u8 *)kd_mpi_sys_mmap_cached(phys_addr, IR_BUF_SIZE);
     if (ir_virt_addr == NULL)
     {
         printf("%s mmap error\n", __func__);
@@ -1522,7 +1537,7 @@ chn_parse:
         return -1;
     }
 
-    ret = sample_dv_dma_init(dma_rotation, gen_calibration);
+    ret = sample_dv_dma_init(dma_rotation, gen_calibration,g_gdma_pool_id);
     if (ret) {
         printf("sample_dma_init failed\n");
         return -1;
@@ -1838,6 +1853,28 @@ app_exit:
 
     kd_mpi_sys_munmap(ir_virt_addr, IR_BUF_SIZE);
     kd_mpi_vb_release_block(ir_handle);
+
+    if (g_ir_pool_id != VB_INVALID_POOLID) {
+        ret = kd_mpi_vb_destory_pool(g_ir_pool_id);
+        if (ret)
+            printf("destroy input pool failed ret:%d\n", ret);
+        g_ir_pool_id = VB_INVALID_POOLID;
+    }
+
+
+    if (g_gdma_pool_id[0] != VB_INVALID_POOLID) {
+        ret = kd_mpi_vb_destory_pool(g_gdma_pool_id[0]);
+        if (ret)
+            printf("destroy gdma pool 0 failed ret:%d\n", ret);
+        g_gdma_pool_id[0] = VB_INVALID_POOLID;
+    }
+
+    if (g_gdma_pool_id[1] != VB_INVALID_POOLID) {
+        ret = kd_mpi_vb_destory_pool(g_gdma_pool_id[1]);
+        if (ret)
+            printf("destroy gdma pool 1 failed ret:%d\n", ret);
+        g_gdma_pool_id[1] = VB_INVALID_POOLID;
+    }
 #if ENABLE_CDC
     close(fd_usb);
 #endif

@@ -33,6 +33,26 @@ k_video_frame_info g_vf_info;
 
 static pthread_t tid1;
 k_bool thread_exit = K_FALSE;
+static k_u32 g_gdma_attach_pool_id = VB_INVALID_POOLID;
+
+static k_u32 gdma_vb_create_pool(k_u32 blk_cnt,k_u64 blk_size)
+{
+    k_vb_pool_config pool_config;
+    k_u32 gdma_pool_id = VB_INVALID_POOLID;
+
+    memset(&pool_config, 0, sizeof(pool_config));
+    pool_config.blk_cnt = blk_cnt;
+    pool_config.blk_size = blk_size;
+    pool_config.mode = VB_REMAP_MODE_NOCACHE;
+    gdma_pool_id = kd_mpi_vb_create_pool(&pool_config);
+    if (gdma_pool_id == VB_INVALID_POOLID) {
+        printf("gdma_vb_create_pool err\n");
+        return gdma_pool_id;
+    }
+    printf("gdma_pool_id %d\n", gdma_pool_id);
+
+    return gdma_pool_id;
+}
 
 static k_s32 sample_dv_vb_init()
 {
@@ -48,22 +68,6 @@ static k_s32 sample_dv_vb_init()
     config.comm_pool[0].blk_cnt = DPU_FRAME_COUNT * 2 + 3;
     config.comm_pool[0].blk_size = g_vdd_cfg[0].img_height * g_vdd_cfg[0].img_width * 3 / 2;
     config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-
-    /* dma vb init */
-    config.comm_pool[1].blk_cnt = DPU_FRAME_COUNT;
-    config.comm_pool[1].blk_size = g_vdd_cfg[0].img_height * g_vdd_cfg[0].img_width;
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
-
-    /* dpu vb init */
-    config.comm_pool[2].blk_cnt = (DPU_FRAME_COUNT);
-    config.comm_pool[2].blk_size = 5 * 1024 * 1024;
-    config.comm_pool[2].mode = VB_REMAP_MODE_NOCACHE;
-
-    /* vo vb init */
-    config.max_pool_cnt = 10;
-    config.comm_pool[3].blk_cnt = 1;
-    config.comm_pool[3].blk_size = PRIVATE_POLL_SZE;          // osd0 - 3 argb 320 x 240
-    config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;//VB_REMAP_MODE_NOCACHE;
 
     ret = kd_mpi_vb_set_config(&config);
     if(ret)
@@ -87,6 +91,8 @@ static k_s32 sample_dv_vb_init()
     pool_id = kd_mpi_vb_create_pool(&pool_config);      // osd0 - 3 argb 320 x 240
 
     g_vo_pool_id = pool_id;
+
+    g_gdma_attach_pool_id = gdma_vb_create_pool(DPU_FRAME_COUNT, g_vdd_cfg[0].img_height * g_vdd_cfg[0].img_width);
 
     return ret;
 }
@@ -273,7 +279,7 @@ int main(int argc, char *argv[])
             mirror = atoi(argv[i + 1]);
         }
     }
-    
+
     if(SENSOR_TYPE_MAX == sensor_index) {
         k_vicap_probe_config probe_cfg;
         k_vicap_sensor_info sensor_info;
@@ -319,7 +325,7 @@ int main(int argc, char *argv[])
         goto err_vo_disable;
     }
 
-    ret = sample_dv_dma_init();
+    ret = sample_dv_dma_init(g_gdma_attach_pool_id);
     if (ret) {
         printf("sample_dma_init failed\n");
         goto err_dpu_delete;
