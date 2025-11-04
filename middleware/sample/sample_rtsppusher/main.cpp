@@ -22,49 +22,38 @@ static void sigHandler(int sig_no) {
 }
 
 static void Usage() {
-    std::cout << "Usage: ./sample_rtsppusher.elf [-s <sensor_type>] [-w <width>] [-h <height>] [-b <bitrate_kbps>] [-o <rtspurl>]" << std::endl;
-    std::cout << "-s: the sensor type, default 7 :" << std::endl;
-    std::cout << "       see camera sensor doc." << std::endl;
+    std::cout << "Usage: ./sample_rtsppusher.elf [-w <width>] [-h <height>] [-b <bitrate_kbps>] [-o <rtspurl>]" << std::endl;
     std::cout << "-w: the video encoder width, default 1280" << std::endl;
     std::cout << "-h: the video encoder height, default 720" << std::endl;
     std::cout << "-b: the video encoder bitrate(kbps), default 2000" << std::endl;
+    std::cout << "-o: the RTSP server URL to push stream (required), e.g. rtsp://ip:554/live/stream" << std::endl;
     exit(-1);
 }
 
 int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
     int result;
     opterr = 0;
-    while ((result = getopt(argc, argv, "Hs:w:h:b:o:")) != -1) {
+    while ((result = getopt(argc, argv, "Hw:h:b:o:")) != -1) {
         switch(result) {
         case 'H' : {
             Usage(); break;
-        }
-        case 's' : {
-            int n = atoi(optarg);
-            if (n < 0 || n > 27) Usage();
-            config.sensor_type = (k_vicap_sensor_type)n;
-            config.video_valid = true;
-            break;
         }
         case 'w': {
             int n = atoi(optarg);
             if (n < 0) Usage();
             config.venc_width = n;
-            config.video_valid = true;
             break;
         }
         case 'h': {
             int n = atoi(optarg);
             if (n < 0) Usage();
             config.venc_height = n;
-            config.video_valid = true;
             break;
         }
         case 'b': {
             int n = atoi(optarg);
             if (n < 0) Usage();
             config.bitrate_kbps = n;
-            config.video_valid = true;
             break;
         }
         case 'o':{
@@ -73,10 +62,6 @@ int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
         }
         default: Usage(); break;
         }
-    }
-    if (config.video_valid) {
-        // validate the parameters... TODO
-        std::cout << "Validate the input config, not implemented yet, TODO." << std::endl;
     }
     return 0;
 }
@@ -131,12 +116,14 @@ class MyRtspServer : public IOnAEncData, public IOnVEncData {
                 printf("kd_sample_sensor_auto_detect failed\n");
                 return -1;
             }
+            else{
+                printf("kd_sample_sensor_auto_detect success, detected sensor type: %d\n", config.sensor_type);
+            }
         }
 
         if (media_.Init(config) < 0) return -1;
         if (media_.CreateAiAEnc(this) < 0) return -1;
-        if (media_.CreateADecAo() < 0) return -1;
-        if (config.video_valid && media_.CreateVcapVEnc(this) < 0) return -1;
+        if (media_.CreateVcapVEnc(this) < 0) return -1;
 
         RtspPusherInitParam pusher_param;
         strcpy(pusher_param.sRtspUrl,g_rtsp_url.c_str());
@@ -149,7 +136,6 @@ class MyRtspServer : public IOnAEncData, public IOnVEncData {
     int DeInit() {
         Stop();
         media_.DestroyVcapVEnc();
-        media_.DestroyADecAo();
         media_.DestroyAiAEnc();
         media_.Deinit();
 
@@ -160,7 +146,6 @@ class MyRtspServer : public IOnAEncData, public IOnVEncData {
 
     int Start() {
         if(started_) return 0;
-        media_.StartADecAo();
         rtsp_pusher_.Open();
         media_.StartAiAEnc();
         media_.StartVcapVEnc();
@@ -172,7 +157,6 @@ class MyRtspServer : public IOnAEncData, public IOnVEncData {
         rtsp_pusher_.Close();
         started_ = false;
         media_.StopVcapVEnc();
-        media_.StopADecAo();
         media_.StopAiAEnc();
         return 0;
     }
@@ -198,6 +182,10 @@ int main(int argc, char *argv[]) {
     KdMediaInputConfig config;
     config.video_type = KdMediaVideoType::kVideoTypeH264;
     parse_config(argc, argv, config);
+    if (g_rtsp_url.empty()){
+        Usage();
+        return 0;
+    }
 
     MyRtspServer *server = new MyRtspServer();
     if (!server || server->Init(config) < 0) {

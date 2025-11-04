@@ -415,6 +415,13 @@ static void sample_vdec_unbind_vo(k_u32 chn_id)
     return;
 }
 
+static void show_help()
+{
+    printf("Usage: ./sample_vdec.elf -i test.265 -type 0\n");
+    printf("-i: input file name\n");
+    printf("-type: vo type,see vo doc, e.g. LCD(20), HDMI(101) \n");
+}
+
 int main(int argc, char *argv[])
 {
     int ch = 0;
@@ -425,15 +432,18 @@ int main(int argc, char *argv[])
     FILE *input_file = NULL;
     k_s32 ret;
 
+    if (argc <= 1){
+        show_help();
+        return -1;
+    }
+
     memset(g_vdec_conf, 0, sizeof(sample_vdec_conf_t)*VDEC_MAX_CHN_NUMS);
 
     for (i = 1; i < argc; i += 2)
     {
         if (strcmp(argv[i], "-help") == 0)
         {
-            printf("Usage: ./sample_vdec.elf -i test.265 -type 0\n");
-            printf("-i: input file name\n");
-            printf("-type: vo type, default 0, see vo doc \n");
+            show_help();
             return -1;
         }
         else if (strcmp(argv[i], "-i") == 0)

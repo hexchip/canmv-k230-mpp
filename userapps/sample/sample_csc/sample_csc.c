@@ -134,6 +134,7 @@ static void sample_vicap_config()
 
     chn_attr.pix_format = PIXEL_FORMAT_RGB_888;
     chn_attr.buffer_num = VICAP_BUF_CNT;
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     chn_attr.buffer_size = (g_nonai_2d_conf.width * g_nonai_2d_conf.height * 3 + 0xfff) & ~ 0xfff;
 
     ret = kd_mpi_vicap_set_chn_attr(VICAP_DEV_ID_0, VICAP_CHN_ID_0, chn_attr);
@@ -152,6 +153,7 @@ static void sample_vicap_config()
     chn_attr.pix_format = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
     chn_attr.buffer_num = VICAP_BUF_CNT;
     chn_attr.buffer_size = (g_nonai_2d_conf.width * g_nonai_2d_conf.height * 3 / 2 + 0xfff) & ~ 0xfff;
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
 
     ret = kd_mpi_vicap_set_chn_attr(VICAP_DEV_ID_0, VICAP_CHN_ID_1, chn_attr);
     CHECK_RET(ret, __func__, __LINE__);
@@ -317,12 +319,6 @@ static k_s32 sample_vb_init()
 
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
-    config.comm_pool[0].blk_cnt = VICAP_BUF_CNT;
-    config.comm_pool[0].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3, 0x1000);
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[1].blk_cnt = VICAP_BUF_CNT;
-    config.comm_pool[1].blk_size = VICAP_ALIGN_UP(g_nonai_2d_conf.width*g_nonai_2d_conf.height*3/2, 0x1000);
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
 
     ret = kd_mpi_vb_set_config(&config);
 

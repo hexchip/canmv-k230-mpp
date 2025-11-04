@@ -37,22 +37,45 @@
 
 static k_u8 g_exit = 0;
 
+// Signal handler function
 static void sig_handler(int sig) {
     g_exit = 1;
 }
 
+// Display usage instructions
+static void print_usage(const char *prog_name) {
+    printf("Usage: %s <input_mp4_file>\n", prog_name);
+    printf("Example: %s /data/test.mp4\n", prog_name);
+}
+
 int main(int argc, char *argv[]) {
+    // Check command line arguments
+    if (argc != 2) {
+        fprintf(stderr, "Error: Invalid number of arguments\n");
+        print_usage(argv[0]);
+        return -1;
+    }
+
+    // Check if input file ends with .mp4
+    const char *input_file = argv[1];
+    size_t len = strlen(input_file);
+    if (len < 4 || strcmp(input_file + len - 4, ".mp4") != 0) {
+        fprintf(stderr, "Error: Input file must be an MP4 file with .mp4 extension\n");
+        print_usage(argv[0]);
+        return -1;
+    }
 
     signal(SIGINT, sig_handler);
 
     printf("mp4 demuxer...\n");
+    printf("Processing file: %s\n", input_file);
 
-    // create mp4 instance
+    // Create mp4 instance
     KD_HANDLE mp4_demuxer = NULL;
     k_mp4_config_s mp4_config;
     memset(&mp4_config, 0, sizeof(mp4_config));
     mp4_config.config_type = K_MP4_CONFIG_DEMUXER;
-    strcpy(mp4_config.demuxer_config.file_name, "/sharefs/test.mp4");
+    strcpy(mp4_config.demuxer_config.file_name, input_file);  // Use file path from command line
     mp4_config.muxer_config.fmp4_flag = 0;
 
     k_s32 ret = kd_mp4_create(&mp4_demuxer, &mp4_config);
@@ -92,9 +115,9 @@ int main(int argc, char *argv[]) {
             printf("    width: %d.\n", track_info.video_info.width);
             printf("    height: %d.\n", track_info.video_info.height);
             if (track_info.video_info.codec_id == K_MP4_CODEC_ID_H264)
-                video_file_fp = fopen("/sharefs/test.264", "wb");
+                video_file_fp = fopen("/data/test.264", "wb");
             else if (track_info.video_info.codec_id == K_MP4_CODEC_ID_H265)
-                video_file_fp = fopen("/sharefs/test.265", "wb");
+                video_file_fp = fopen("/data/test.265", "wb");
         } else if (track_info.track_type == K_MP4_STREAM_AUDIO) {
             printf("    codec_id: %d.\n", track_info.audio_info.codec_id);
             printf("    track_id: %d.\n", track_info.audio_info.track_id);
@@ -102,13 +125,15 @@ int main(int argc, char *argv[]) {
             printf("    sample_rate: %d.\n", track_info.audio_info.sample_rate);
             printf("    bit_per_sample: %d.\n", track_info.audio_info.bit_per_sample);
             if (track_info.audio_info.codec_id == K_MP4_CODEC_ID_G711A)
-                audio_file_fp = fopen("/sharefs/test.g711a", "wb");
+                audio_file_fp = fopen("/data/test.g711a", "wb");
             else if (track_info.audio_info.codec_id == K_MP4_CODEC_ID_G711U)
-                audio_file_fp = fopen("/sharefs/test.g711u", "wb");
+                audio_file_fp = fopen("/data/test.g711u", "wb");
         }
     }
 
     k_mp4_frame_data_s frame_data;
+    int vframe_cnt = 0;
+    int aframe_cnt = 0;
     while (!g_exit) {
         memset(&frame_data, 0, sizeof(frame_data));
         ret = kd_mp4_get_frame(mp4_demuxer, &frame_data);
@@ -124,8 +149,14 @@ int main(int argc, char *argv[]) {
 
         if (frame_data.codec_id == K_MP4_CODEC_ID_H264 || frame_data.codec_id == K_MP4_CODEC_ID_H265) {
             fwrite(frame_data.data, 1, frame_data.data_length, video_file_fp);
+            vframe_cnt ++;
+            if (vframe_cnt % 100 == 0)
+                printf("[%d]Writing video frame...\n",vframe_cnt); // Prompt for video frame writing
         } else if (frame_data.codec_id == K_MP4_CODEC_ID_G711A || frame_data.codec_id == K_MP4_CODEC_ID_G711U) {
             fwrite(frame_data.data, 1, frame_data.data_length, audio_file_fp);
+            aframe_cnt ++;
+            if (aframe_cnt % 100 == 0)
+                printf("[%d]Writing audio frame...\n",aframe_cnt);  // Prompt for audio frame writing
         }
     }
 

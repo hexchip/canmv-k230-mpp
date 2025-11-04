@@ -154,21 +154,9 @@ k_s32 av_sample_vb_init(k_bool enable_cache, k_u32 sample_rate)
     }
     k_s32 ret;
     k_vb_config config;
-    k_s32 ch_cnt = 1;
 
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
-
-    config.comm_pool[0].blk_cnt = INPUT_BUF_CNT * ch_cnt;
-    config.comm_pool[0].blk_size = FRAME_BUF_SIZE;
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-
-    int blk_total_size = 0;
-    for (int i = 0; i < 1; i++)
-    {
-        blk_total_size += config.comm_pool[i].blk_cnt * config.comm_pool[i].blk_size;
-    }
-    av_debug("mmz blk total size:%.2f MB\n", blk_total_size / 1024 / 1024.0);
 
     ret = kd_mpi_vb_set_config(&config);
     if (ret)
@@ -271,6 +259,7 @@ static void sample_vicap_config(k_u32 ch, k_vicap_sensor_type sensor_type)
 
     chn_attr.pix_format = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
     chn_attr.buffer_num = INPUT_BUF_CNT;
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     chn_attr.buffer_size = venc_conf->chn_width * venc_conf->chn_height * 3 / 2;
 
     ret = kd_mpi_vicap_set_chn_attr(vicap_dev, vicap_chn, chn_attr);

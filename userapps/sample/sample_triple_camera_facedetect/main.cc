@@ -189,7 +189,7 @@ static inline void PRINT_TIME_NOW(void)
 #define PRINT_TIME_NOW()
 #endif
 
-typedef struct 
+typedef struct
 {
     pthread_mutex_t ai_mutex;
 
@@ -448,53 +448,9 @@ int sample_vb_init(void)
 {
     k_s32 ret;
     k_vb_config config;
-    
+
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
-    //VB for YUV420SP output for dev0 
-    config.comm_pool[0].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[0].blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3 / 2), VICAP_ALIGN_1K);
-
-    //VB for RGB888 output for dev0
-    config.comm_pool[1].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[1].blk_size = VICAP_ALIGN_UP((ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH * 3 ), VICAP_ALIGN_1K);
-
-    //VB for YUV420SP output for dev1
-    config.comm_pool[2].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[2].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[2].blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3 / 2), VICAP_ALIGN_1K);
-
-    //VB for RGB888 output for dev1
-    config.comm_pool[3].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[3].blk_size = VICAP_ALIGN_UP((ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH * 3 ), VICAP_ALIGN_1K);
-
-    //VB for rgb888 output for dev2
-    config.comm_pool[4].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[4].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[4].blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3), VICAP_ALIGN_1K);
-
-    //VB for RGB888 output for dev2
-    config.comm_pool[5].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[5].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[5].blk_size = VICAP_ALIGN_UP((ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH * 3 ), VICAP_ALIGN_1K);
-
-    //VB for VICAP_INPUT_BUF_NUM output for dev0
-    config.comm_pool[6].blk_cnt = VICAP_INPUT_BUF_NUM;
-    config.comm_pool[6].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[6].blk_size = VICAP_ALIGN_UP((ISP_INPUT_WIDTH * ISP_INPUT_HEIGHT * 3 ), VICAP_ALIGN_1K);
-
-    //VB for VICAP_INPUT_BUF_NUM output for dev1
-    config.comm_pool[7].blk_cnt = VICAP_INPUT_BUF_NUM;
-    config.comm_pool[7].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[7].blk_size = VICAP_ALIGN_UP((ISP_INPUT_WIDTH * ISP_INPUT_HEIGHT * 3 ), VICAP_ALIGN_1K);
-
-    //VB for VICAP_INPUT_BUF_NUM output for dev2
-    config.comm_pool[8].blk_cnt = VICAP_INPUT_BUF_NUM;
-    config.comm_pool[8].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[8].blk_size = VICAP_ALIGN_UP((ISP_INPUT_WIDTH * ISP_INPUT_HEIGHT * 3 ), VICAP_ALIGN_1K);
 
 
     ret = kd_mpi_vb_set_config(&config);
@@ -565,13 +521,14 @@ int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     dev_attr.acq_win.v_start = 0;
     dev_attr.acq_win.width = ISP_INPUT_WIDTH;
     dev_attr.acq_win.height = ISP_INPUT_HEIGHT;
-    dev_attr.mode = VICAP_WORK_OFFLINE_MODE;  
+    dev_attr.mode = VICAP_WORK_OFFLINE_MODE;
 
     if(dev_attr.mode == VICAP_WORK_OFFLINE_MODE)
     {
         dev_attr.mode = VICAP_WORK_OFFLINE_MODE;
         dev_attr.buffer_num = VICAP_INPUT_BUF_NUM;
         dev_attr.buffer_size = VICAP_ALIGN_UP((ISP_INPUT_WIDTH * ISP_INPUT_HEIGHT * 2), VICAP_ALIGN_1K);
+        dev_attr.buffer_pool_id = VB_INVALID_POOLID;
     }
 
     dev_attr.pipe_ctrl.data = 0xFFFFFFFF;
@@ -618,6 +575,7 @@ int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     }
 
     chn_attr.buffer_num = VICAP_OUTPUT_BUF_NUM - 1;//at least 3 buffers for isp
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     vicap_chn = VICAP_CHN_ID_0;
 
     // printf("sample_vicap ...kd_mpi_vicap_set_chn_attr, buffer_size[%d]\n", chn_attr.buffer_size);
@@ -642,6 +600,7 @@ int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     chn_attr.pix_format = PIXEL_FORMAT_RGB_888_PLANAR;
     chn_attr.buffer_num = VICAP_OUTPUT_BUF_NUM;//at least 3 buffers for isp
     chn_attr.buffer_size = VICAP_ALIGN_UP((ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH * 3 ), VICAP_ALIGN_1K);
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
 
     // printf("sample_vicap ...kd_mpi_vicap_set_chn_attr, buffer_size[%d]\n", chn_attr.buffer_size);
     ret = kd_mpi_vicap_set_chn_attr(vicap_dev, VICAP_CHN_ID_1, chn_attr);
@@ -721,12 +680,12 @@ static void *sample_vicap_dev0_ai_thread(void *arg)
     /*Allow one frame time for the VO to release the VB block*/
     k_u32 display_ms = 1000 / 33;
     size_t size = CHANNEL * ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH;
-    
+
     DetectResult box_result;
     std::vector<face_coordinate> boxes;
 
     k_vicap_dev vicap_dev = VICAP_DEV_ID_0;
-    
+
     while(app_run)
     {
         memset(&dump_info, 0 , sizeof(k_video_frame_info));
@@ -780,7 +739,7 @@ static void *sample_vicap_dev0_ai_thread(void *arg)
             }
         }
 
-        
+
         for (size_t i = 0, j = 0; i < boxes.size(); i += 1)
         {
             // std::cout << "[" << boxes[i] << ", " << boxes[i + 1] << ", " << boxes[i + 2] <<", " << boxes[i + 3] << "]" << std::endl;
@@ -832,7 +791,7 @@ static void *sample_vicap_dev0_ai_thread(void *arg)
     vo_mpp_chn.chn_id = K_VO_DISPLAY_CHN_ID1;
 
     sample_vicap_unbind_vo(vicap_mpp_chn, vo_mpp_chn);
-    
+
     exit_flag = exit_flag  | (1 << 1);
 
     printf("sample_vicap_dev0_ai_thread exit_flag is %x  \n", exit_flag);
@@ -853,7 +812,7 @@ static void *sample_vicap_dev1_ai_thread(void *arg)
     std::vector<face_coordinate> boxes;
 
     k_vicap_dev vicap_dev = VICAP_DEV_ID_1;
-    
+
     while(app_run)
     {
         memset(&dump_info, 0 , sizeof(k_video_frame_info));
@@ -912,7 +871,7 @@ static void *sample_vicap_dev1_ai_thread(void *arg)
         {
             // std::cout << "[" << boxes[i] << ", " << boxes[i + 1] << ", " << boxes[i + 2] <<", " << boxes[i + 3] << "]" << std::endl;
 
-            // only 5 fraw 
+            // only 5 fraw
             if(i > 4)
                 continue;
 
@@ -960,7 +919,7 @@ static void *sample_vicap_dev1_ai_thread(void *arg)
     vo_mpp_chn.chn_id = K_VO_DISPLAY_CHN_ID2;
 
     sample_vicap_unbind_vo(vicap_mpp_chn, vo_mpp_chn);
-    
+
     exit_flag = exit_flag  | (1 << 2);
 
     printf("sample_vicap_dev1_ai_thread exit_flag is %x  \n", exit_flag);
@@ -981,7 +940,7 @@ static void *sample_vicap_dev2_ai_thread(void *arg)
     std::vector<face_coordinate> boxes;
 
     k_vicap_dev vicap_dev = VICAP_DEV_ID_2;
-    
+
     while(app_run)
     {
         memset(&dump_info, 0 , sizeof(k_video_frame_info));
@@ -1040,7 +999,7 @@ static void *sample_vicap_dev2_ai_thread(void *arg)
         {
             // std::cout << "[" << boxes[i] << ", " << boxes[i + 1] << ", " << boxes[i + 2] <<", " << boxes[i + 3] << "]" << std::endl;
 
-            // only 5 fraw 
+            // only 5 fraw
             if(i > 4)
                 continue;
 
@@ -1088,7 +1047,7 @@ static void *sample_vicap_dev2_ai_thread(void *arg)
     vo_mpp_chn.chn_id = K_VO_DISPLAY_CHN_ID3;
 
     sample_vicap_unbind_vo(vicap_mpp_chn, vo_mpp_chn);
-    
+
     exit_flag = exit_flag  | (1 << 3);
 
     printf("sample_vicap_dev1_ai_thread exit_flag is %x  \n", exit_flag);

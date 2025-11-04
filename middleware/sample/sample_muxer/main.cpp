@@ -120,8 +120,6 @@ public:
             return -1;
         if (media_.CreateAiAEnc(this) < 0)
             return -1;
-        if (media_.CreateADecAo() < 0)
-            return -1;
         if (config.video_valid && media_.CreateVcapVEnc(this) < 0)
             return -1;
 
@@ -131,7 +129,6 @@ public:
     {
         Stop();
         media_.DestroyVcapVEnc();
-        media_.DestroyADecAo();
         media_.DestroyAiAEnc();
         media_.Deinit();
         mp4_muxer_deinit();
@@ -142,7 +139,6 @@ public:
     {
         if (started_)
             return 0;
-        media_.StartADecAo();
         media_.StartAiAEnc();
         media_.StartVcapVEnc();
         started_ = true;
@@ -154,7 +150,6 @@ public:
             return 0;
         started_ = false;
         media_.StopVcapVEnc();
-        media_.StopADecAo();
         media_.StopAiAEnc();
         return 0;
     }
@@ -274,9 +269,7 @@ private:
 
 static void show_usage(char* pname)
 {
-    printf("Usage: ./%s -o *.mp4  -s 7\n",pname);
-    printf("-s: the sensor type: default 7\n");
-    printf("     see camera sensor doc.\n");
+    printf("Usage: ./%s -o *.mp4 \n",pname);
     printf("-o: save mp4 path file name\n");
 }
 
@@ -301,10 +294,6 @@ int main(int argc, char *argv[])
     {
         for (int i = 1; i < argc; i += 2)
         {
-            if (strcmp(argv[i], "-s") == 0)
-            {
-                config.sensor_type = (k_vicap_sensor_type)atoi(argv[i + 1]);
-            }
             if (strcmp(argv[i], "-o") == 0)
             {
                 memset(g_mp4_pathname,0,sizeof(g_mp4_pathname));

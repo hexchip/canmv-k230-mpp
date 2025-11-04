@@ -75,6 +75,8 @@ typedef enum {
 #if defined (CONFIG_MPP_ENABLE_DSI_DEBUGGER)
     DSI_DEBUGGER_DEVICE = 201,
 #endif // CONFIG_MPP_ENABLE_DSI_DEBUGGER
+
+    CONNECTOR_BUTT,
 } k_connector_type;
 
 typedef struct

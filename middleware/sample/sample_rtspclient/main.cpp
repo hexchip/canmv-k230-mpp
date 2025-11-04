@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
     g_exit_flag.store(false);
 
     if (argc < 2) {
-        printf("Usage: ./backchannel_client <rtsp_url> <out_type>\n");
-        printf("        out_type: vo type, see vo doc, default 0.\n");
+        printf("Usage: ./sample_rtspclient <rtsp_url> <out_type>\n");
+        printf("        out_type: vo type, see vo doc, e.g. LCD(20), HDMI(101)\n");
         return 0;
     }
     std::string url = argv[1];

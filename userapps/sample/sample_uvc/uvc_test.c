@@ -86,9 +86,6 @@ int vb_init(void)
     memset(&config, 0, sizeof(config));
 
     config.max_pool_cnt = 10;
-    config.comm_pool[0].blk_cnt = 20;
-    config.comm_pool[0].blk_size = PRIVATE_POLL_SZE;
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
 
     ret = kd_mpi_vb_set_config(&config);
     if (ret) {

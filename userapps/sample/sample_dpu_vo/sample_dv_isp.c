@@ -134,6 +134,7 @@ void sample_dv_vicap_config(k_u32 ch, k_s32 sensor_index)
     chn_attr.pix_format = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
     chn_attr.buffer_num = VDD_INPUT_BUF_CNT;
     chn_attr.buffer_size = vdd_cfg->img_width * vdd_cfg->img_height * 3 / 2;
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     //chn_attr.block_type = ISP_BUFQUE_TIMEOUT_TYPE;
     //chn_attr.wait_time = 500;
 

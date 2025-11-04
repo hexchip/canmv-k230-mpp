@@ -310,22 +310,10 @@ static k_s32 sample_vicap_vb_init(vicap_device_obj *dev_obj)
             continue;
         printf("%s, enable dev(%d)\n", __func__, i);
 
-        if ((dev_obj[i].mode == VICAP_WORK_OFFLINE_MODE) || (dev_obj[i].mode == VICAP_WORK_SW_TILE_MODE)) {
-            config.comm_pool[k].blk_cnt = VICAP_INPUT_BUF_NUM;
-            config.comm_pool[k].mode = VB_REMAP_MODE_NOCACHE;
-            config.comm_pool[k].blk_size = dev_obj[i].in_size;
-            printf("%s, dev(%d) pool(%d) in_size(%d) blk_cnt(%d)\n", __func__, i , k ,dev_obj[i].in_size, config.comm_pool[k].blk_cnt);
-            k++;
-        }
-
         for (int j = 0; j < VICAP_CHN_ID_MAX; j++) {
             if (!dev_obj[i].chn_enable[j])
                 continue;
             printf("%s, enable chn(%d), k(%d)\n", __func__, j, k);
-            config.comm_pool[k].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-            config.comm_pool[k].mode = VB_REMAP_MODE_NOCACHE;
-            if (dev_obj[i].preview[j] && dev_obj[i].rotation[j] > 16)
-                config.comm_pool[k].blk_cnt += GDMA_BUF_NUM;
 
             k_pixel_format pix_format = dev_obj[i].out_format[j];
             k_u16 out_width = dev_obj[i].out_win[j].width;
@@ -335,31 +323,27 @@ static k_s32 sample_vicap_vb_init(vicap_device_obj *dev_obj)
 
             switch (pix_format) {
             case PIXEL_FORMAT_YUV_SEMIPLANAR_420:
-                config.comm_pool[k].blk_size = VICAP_ALIGN_UP((out_width * out_height * 3 / 2), VICAP_ALIGN_1K);
+                dev_obj[i].buf_size[j] = VICAP_ALIGN_UP((out_width * out_height * 3 / 2), VICAP_ALIGN_1K);
                 break;
             case PIXEL_FORMAT_RGB_888:
             case PIXEL_FORMAT_RGB_888_PLANAR:
-                config.comm_pool[k].blk_size = VICAP_ALIGN_UP((out_width * out_height * 3), VICAP_ALIGN_1K);
+                dev_obj[i].buf_size[j] = VICAP_ALIGN_UP((out_width * out_height * 3), VICAP_ALIGN_1K);
                 break;
             case PIXEL_FORMAT_RGB_BAYER_10BPP:
-                config.comm_pool[k].blk_size = VICAP_ALIGN_UP((in_width * in_height * 2), VICAP_ALIGN_1K);
+                dev_obj[i].buf_size[j] = VICAP_ALIGN_UP((in_width * in_height * 2), VICAP_ALIGN_1K);
                 break;
             default:
                 dev_obj[i].out_format[j] = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
-                config.comm_pool[k].blk_size = VICAP_ALIGN_UP((out_width * out_height * 3 / 2), VICAP_ALIGN_1K);
+                dev_obj[i].buf_size[j] = VICAP_ALIGN_UP((out_width * out_height * 3 / 2), VICAP_ALIGN_1K);
                 break;
             }
-            dev_obj[i].buf_size[j] = config.comm_pool[k].blk_size;
-            printf("%s, dev(%d) chn(%d) pool(%d) buf_size(%d) blk_cnt(%d)\n", __func__, i, j, k ,dev_obj[i].buf_size[j], config.comm_pool[k].blk_cnt);
+            printf("%s, dev(%d) chn(%d) buf_size(%d) blk_cnt(%d)\n", __func__, i, j ,dev_obj[i].buf_size[j], config.comm_pool[k].blk_cnt);
             k++;
         }
         if (dev_obj[i].dw_enable) {
             // another buffer for isp->dw
-            config.comm_pool[k].blk_size = VICAP_ALIGN_UP((dev_obj[i].in_width * dev_obj[i].in_height * 3 / 2), VICAP_ALIGN_1K);
-            config.comm_pool[k].blk_cnt = VICAP_MIN_FRAME_COUNT * 2;
-            config.comm_pool[k].mode = VB_REMAP_MODE_NOCACHE;
-            dev_obj[i].buf_size[0] = config.comm_pool[k].blk_size;
-            printf("%s, dev(%d) pool(%d) buf_size(%d)\n", __func__, i, k ,dev_obj[i].buf_size[0]);
+            dev_obj[i].buf_size[0] = VICAP_ALIGN_UP((dev_obj[i].in_width * dev_obj[i].in_height * 3 / 2), VICAP_ALIGN_1K);
+            printf("%s, dev(%d) buf_size(%d)\n", __func__, i, dev_obj[i].buf_size[0]);
             k++;
         }
     }
@@ -1030,6 +1014,7 @@ chn_parse:
         dev_attr.acq_win.height = device_obj[dev_num].in_height;
         if ((work_mode == VICAP_WORK_OFFLINE_MODE) || (work_mode == VICAP_WORK_LOAD_IMAGE_MODE) ||(work_mode == VICAP_WORK_SW_TILE_MODE)) {
             dev_attr.mode = work_mode;
+            dev_attr.buffer_pool_id = VB_INVALID_POOLID;
             dev_attr.buffer_num = VICAP_INPUT_BUF_NUM;
             if(work_mode == VICAP_WORK_SW_TILE_MODE)
                 dev_attr.buffer_size = VICAP_ALIGN_UP((device_obj[dev_num].in_width * device_obj[dev_num].in_height * 12 / 8), VICAP_ALIGN_1K);
@@ -1197,6 +1182,7 @@ chn_parse:
             chn_attr.pix_format = device_obj[dev_num].out_format[chn_num];
             chn_attr.buffer_num = VICAP_OUTPUT_BUF_NUM;
             chn_attr.buffer_size = device_obj[dev_num].buf_size[chn_num];
+            chn_attr.buffer_pool_id = VB_INVALID_POOLID;
             chn_attr.fps = device_obj[dev_num].fps[chn_num];
 
             printf("sample_vicap, set dev(%d) chn(%d) attr, buffer_size(%d), out size[%dx%d]\n", \

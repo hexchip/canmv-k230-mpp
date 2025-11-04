@@ -218,7 +218,8 @@ static k_s32 kd_sample_vicap_set_dev_attr(k_vicap_dev_set_info dev_info)
         printf("kd_mpi_vicap_get_sensor_info failed:0x%x\n", ret);
         return K_FAILED;
     }
-    dev_attr.dw_enable = dev_info.dw_en;
+    dev_attr.dw_enable = K_FALSE;
+    dev_attr.mode = VICAP_WORK_ONLINE_MODE;
 
     dev_attr.acq_win.h_start = 0;
     dev_attr.acq_win.v_start = 0;
@@ -230,6 +231,7 @@ static k_s32 kd_sample_vicap_set_dev_attr(k_vicap_dev_set_info dev_info)
         dev_attr.mode = dev_info.mode;
         dev_attr.buffer_num = dev_info.buffer_num;
         dev_attr.buffer_size = dev_info.buffer_size;
+        dev_attr.buffer_pool_id = VB_INVALID_POOLID;
     }
 
     dev_attr.pipe_ctrl.data = dev_info.pipe_ctrl.data;
@@ -279,28 +281,10 @@ int KdMedia::Impl::Init(const KdMediaInputConfig &config)
     k_s32 ret = 0;
     k_vb_config vb_config;
     memset(&vb_config, 0, sizeof(vb_config));
-    vb_config.max_pool_cnt = 64;
-    if (config.video_valid)
-    {
-        memset(&vcap_dev_info_, 0, sizeof(vcap_dev_info_));
-        vcap_dev_info_.dw_en = K_TRUE;
+    memset(&vcap_dev_info_, 0, sizeof(vcap_dev_info_));
+    //vcap_dev_info_.dw_en = K_TRUE;
 
-        if (vcap_dev_info_.dw_en)
-        {
-            k_vicap_sensor_info sensor_info;
-            memset(&sensor_info, 0, sizeof(sensor_info));
-            sensor_info.sensor_type = config.sensor_type;
-            int ret = kd_mpi_vicap_get_sensor_info(config.sensor_type, &sensor_info);
-            if (ret != K_SUCCESS)
-            {
-                std::cout << "KdMedia::Init() kd_mpi_vicap_get_sensor_info failed, ret = " << ret << std::endl;
-                return ret;
-            }
-            vb_config.comm_pool[0].blk_cnt = 6;
-            vb_config.comm_pool[0].blk_size = VI_ALIGN_UP(sensor_info.width * sensor_info.height * 3 / 2, 0x1000);
-            vb_config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-        }
-    }
+    vb_config.max_pool_cnt = 64;
 
     ret = kd_mpi_vb_set_config(&vb_config);
     if (ret)
@@ -320,6 +304,7 @@ int KdMedia::Impl::Init(const KdMediaInputConfig &config)
         vcap_dev_info_.pipe_ctrl.data = 0xFFFFFFFF;
         vcap_dev_info_.sensor_type = config.sensor_type;
         vcap_dev_info_.vicap_dev = vi_dev_id_;
+        vcap_dev_info_.mode = VICAP_WORK_ONLINE_MODE;
 
         if(SENSOR_TYPE_MAX == config.sensor_type) {
             k_vicap_probe_config probe_cfg;
@@ -1074,8 +1059,10 @@ static k_s32 kd_sample_vicap_set_chn_attr(k_vicap_chn_set_info chn_info)
     chn_attr.pix_format = chn_info.pixel_format;
     chn_attr.buffer_num = chn_info.buffer_num;
     chn_attr.buffer_size = chn_info.buf_size;
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     chn_attr.alignment = chn_info.alignment;
     chn_attr.fps = chn_info.fps;
+    printf("====kd_mpi_vicap_set_chn_attr fps:%d\n",chn_attr.fps);
     ret = kd_mpi_vicap_set_chn_attr(chn_info.vicap_dev, chn_info.vicap_chn, chn_attr);
     if (ret)
     {
@@ -1165,11 +1152,13 @@ int KdMedia::Impl::CreateVcapVEnc(IOnVEncData *on_venc_data)
     vi_chn_attr_info.vicap_dev = vi_dev_id_;
     vi_chn_attr_info.buffer_num = 6;
     vi_chn_attr_info.alignment = 12;
+    vi_chn_attr_info.fps = 30;
     vi_chn_attr_info.vicap_chn = (k_vicap_chn)venc_chn_id_;
     if (!vcap_dev_info_.dw_en)
-        vi_chn_attr_info.buf_size = VI_ALIGN_UP(VI_ALIGN_UP(config_.venc_width, 16) * config_.venc_height * 3 / 2, 0x100);
+        vi_chn_attr_info.buf_size = VI_ALIGN_UP(VI_ALIGN_UP(config_.venc_width, 16) * config_.venc_height * 3 / 2, 0x1000);
     else
-        vi_chn_attr_info.buf_size = VI_ALIGN_UP(VI_ALIGN_UP(config_.venc_width, 16) * config_.venc_height * 3 / 2, 0x400);
+        vi_chn_attr_info.buf_size = VI_ALIGN_UP(VI_ALIGN_UP(config_.venc_width, 16) * config_.venc_height * 3 / 2, 0x1000);
+
     ret = kd_sample_vicap_set_chn_attr(vi_chn_attr_info);
     if (ret != K_SUCCESS)
     {
@@ -1223,6 +1212,7 @@ static k_s32 kd_sample_vicap_start(k_vicap_dev vicap_dev)
         printf("kd_mpi_vicap_start failed, dev_num %d out of range\n", vicap_dev);
         return K_FAILED;
     }
+
     ret = kd_mpi_vicap_init(vicap_dev);
     if (ret)
     {
@@ -1239,6 +1229,7 @@ static k_s32 kd_sample_vicap_start(k_vicap_dev vicap_dev)
         kd_mpi_vicap_stop_stream(vicap_dev);
         return K_FAILED;
     }
+
     return K_SUCCESS;
 }
 

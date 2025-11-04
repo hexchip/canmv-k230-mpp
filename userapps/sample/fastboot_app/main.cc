@@ -426,15 +426,6 @@ int sample_vb_init(void)
     k_vb_config config;
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
-    //VB for YUV420SP output
-    config.comm_pool[0].blk_cnt = 5;
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[0].blk_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3 / 2), VICAP_ALIGN_1K);
-
-    //VB for RGB888 output
-    config.comm_pool[1].blk_cnt = 5;
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[1].blk_size = VICAP_ALIGN_UP((ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH * 3 ), VICAP_ALIGN_1K);
 
     ret = kd_mpi_vb_set_config(&config);
     if (ret) {
@@ -517,6 +508,7 @@ int sample_vivcap_init( void )
     chn_attr.chn_enable = K_TRUE;
     chn_attr.pix_format = PIXEL_FORMAT_YVU_PLANAR_420;
     chn_attr.buffer_num = VICAP_MAX_FRAME_COUNT;//at least 3 buffers for isp
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     chn_attr.buffer_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3 / 2), VICAP_ALIGN_1K);;
     vicap_chn = VICAP_CHN_ID_0;
 
@@ -542,6 +534,7 @@ int sample_vivcap_init( void )
     chn_attr.pix_format = PIXEL_FORMAT_BGR_888_PLANAR;
     chn_attr.buffer_num = VICAP_MAX_FRAME_COUNT;//at least 3 buffers for isp
     chn_attr.buffer_size = VICAP_ALIGN_UP((ISP_CHN1_HEIGHT * ISP_CHN1_WIDTH * 3 ), VICAP_ALIGN_1K);
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
 
     // printf("sample_vicap ...kd_mpi_vicap_set_chn_attr, buffer_size[%d]\n", chn_attr.buffer_size);
     ret = kd_mpi_vicap_set_chn_attr(vicap_dev, VICAP_CHN_ID_1, chn_attr);

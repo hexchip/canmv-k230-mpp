@@ -208,16 +208,6 @@ static k_s32 sample_vb_init(void)
     k_vb_config config  = { 0 };
     config.max_pool_cnt = 64;
 
-    // VB pool for VICAP Raw (3 bytes per pixel for 12/16-bit packed raw)
-    config.comm_pool[0].blk_cnt  = 6;
-    config.comm_pool[0].mode     = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[0].blk_size = VB_ALIGN_UP(ISP_WIDTH * ISP_HEIGHT * 3, 4096);
-
-    // VB pool for VICAP YUV output (YUV420SP/NV12: 1.5 bytes per pixel)
-    config.comm_pool[1].blk_cnt  = 6;
-    config.comm_pool[1].mode     = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[1].blk_size = VB_ALIGN_UP(ISP_WIDTH * ISP_HEIGHT * 3 / 2, 4096);
-
     k_s32 ret = kd_mpi_vb_set_config(&config);
     if (ret) {
         printf("kd_mpi_vb_set_config failed, ret=%d", ret);
@@ -272,6 +262,7 @@ static k_s32 sample_vicap_init(k_vicap_dev dev_chn)
     dev_attr.mode           = VICAP_WORK_OFFLINE_MODE;
     dev_attr.buffer_num     = 6;
     dev_attr.buffer_size    = VB_ALIGN_UP(ISP_WIDTH * ISP_HEIGHT * 2, 1024);
+    dev_attr.buffer_pool_id = VB_INVALID_POOLID;
     memcpy(&dev_attr.sensor_info, &sensor_info, sizeof(k_vicap_sensor_info));
 
     ret = kd_mpi_vicap_set_dev_attr(VICAP_DEV_ID_0, dev_attr);
@@ -292,6 +283,7 @@ static k_s32 sample_vicap_init(k_vicap_dev dev_chn)
     chn_attr.buffer_num     = 6;
     chn_attr.buffer_size    = VB_ALIGN_UP(ISP_CH0_WIDTH * ISP_CH0_HEIGHT * 3 / 2, 4096);
     chn_attr.alignment      = 12;
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
 
     ret = kd_mpi_vicap_set_chn_attr(VICAP_DEV_ID_0, VICAP_CHN_ID_0, chn_attr);
     if (ret) {

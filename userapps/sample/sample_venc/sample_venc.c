@@ -228,6 +228,7 @@ static void sample_vicap_config(k_u32 ch, k_u32 width, k_u32 height, k_vicap_sen
     chn_attr.pix_format = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
     chn_attr.buffer_num = INPUT_BUF_CNT;
     chn_attr.buffer_size = (width * height * 3 / 2 + 0xfff) & ~ 0xfff;
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     //chn_attr.block_type = ISP_BUFQUE_TIMEOUT_TYPE;
     //chn_attr.wait_time = 500;
 
@@ -276,9 +277,6 @@ static k_s32 sample_vb_init(k_u32 ch_cnt, k_bool osd_enable)
 
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
-    config.comm_pool[0].blk_cnt = INPUT_BUF_CNT * ch_cnt;
-    config.comm_pool[0].blk_size = FRAME_BUF_SIZE;
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
 
     ret = kd_mpi_vb_set_config(&config);
 
@@ -978,15 +976,12 @@ k_s32 sample_venc_osd_border_h265(k_vicap_sensor_type sensor_type)
 
 void sample_venc_usage(char *sPrgNm)
 {
-    printf("Usage : %s [index] -sensor [sensor_index] -o [filename]\n", sPrgNm);
+    printf("Usage : %s [index] -o [filename]\n", sPrgNm);
     printf("index:\n");
     printf("\t  0) H.265e.\n");
     printf("\t  1) JPEG encode.\n");
     printf("\t  2) OSD + H.264e.\n");
     printf("\t  3) OSD + Border + H.265e.\n");
-    printf("\n");
-    printf("sensor_index:\n");
-    printf("\t  see vicap doc\n");
     return;
 }
 
@@ -1038,11 +1033,7 @@ int main(int argc, char *argv[])
     case_index = atoi(argv[1]);
     for (int i = 2; i < argc; i++)
     {
-        if (strcmp(argv[i], "-sensor") == 0)
-        {
-            sensor_type = (k_vicap_sensor_type)atoi(argv[i + 1]);
-        }
-        else if (strcmp(argv[i], "-o") == 0)
+        if (strcmp(argv[i], "-o") == 0)
         {
             strcpy(out_filename, argv[i + 1]);
             if ((output_file = fopen(out_filename, "wb")) == NULL)

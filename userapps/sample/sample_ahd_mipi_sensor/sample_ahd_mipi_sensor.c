@@ -109,28 +109,6 @@ static int sample_vb_init(void)
     memset(&pool_config, 0, sizeof(pool_config));
     config.max_pool_cnt = 64;
 
-    // for vo install plane data
-    config.comm_pool[0].blk_cnt = 5;
-    config.comm_pool[0].blk_size = PRIVATE_POLL_SZE;          // osd0 - 3 argb 320 x 240
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;           //VB_REMAP_MODE_NOCACHE;
-
-    k_u16 sride = ISP_CHN0_WIDTH;
-    //VB for YUV444 output for dev0
-    config.comm_pool[1].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[1].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[1].blk_size = VICAP_ALIGN_UP((sride * ISP_CHN0_HEIGHT * 3), 0x1000);
-
-    //VB for YUV444 output for dev1
-    config.comm_pool[2].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[2].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[2].blk_size = VICAP_ALIGN_UP((sride * ISP_CHN0_HEIGHT * 3 ), 0x1000);
-
-    //VB for YUV444 output for dev2
-    config.comm_pool[3].blk_cnt = VICAP_OUTPUT_BUF_NUM;
-    config.comm_pool[3].mode = VB_REMAP_MODE_NOCACHE;
-    config.comm_pool[3].blk_size = VICAP_ALIGN_UP((sride * ISP_CHN0_HEIGHT * 3 ), 0x1000);
-
-
     ret = kd_mpi_vb_set_config(&config);
     if (ret) {
         printf("vb_set_config failed ret:%d\n", ret);
@@ -288,6 +266,7 @@ int sample_vivcap_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
 
 
     chn_attr.buffer_num = VICAP_OUTPUT_BUF_NUM;//at least 3 buffers for isp
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     vicap_chn = VICAP_CHN_ID_0;
 
     // printf("sample_vicap ...kd_mpi_vicap_set_chn_attr, buffer_size[%d]\n", chn_attr.buffer_size);
@@ -346,6 +325,7 @@ static int sample_vicap_ahd_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     dev_attr.mode = VICAP_WORK_ONLY_MCM_MODE;
     dev_attr.buffer_num = VICAP_OUTPUT_BUF_NUM;
     dev_attr.buffer_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3), VICAP_ALIGN_1K);
+    dev_attr.buffer_pool_id = VB_INVALID_POOLID;
     dev_attr.pipe_ctrl.data = 0xFFFFFFFF;
     dev_attr.pipe_ctrl.bits.af_enable = 0;
     dev_attr.pipe_ctrl.bits.ahdr_enable = 0;
@@ -377,7 +357,7 @@ static int sample_vicap_ahd_init(k_vicap_dev dev_chn, k_vicap_sensor_type type)
     chn_attr.pix_format = PIXEL_FORMAT_YUV_SEMIPLANAR_444;
     chn_attr.buffer_size = VICAP_ALIGN_UP((ISP_CHN0_WIDTH * ISP_CHN0_HEIGHT * 3), VICAP_ALIGN_1K);
 
-
+    chn_attr.buffer_pool_id = VB_INVALID_POOLID;
     chn_attr.buffer_num = VICAP_OUTPUT_BUF_NUM;//at least 3 buffers for isp
     vicap_chn = VICAP_CHN_ID_0;
 

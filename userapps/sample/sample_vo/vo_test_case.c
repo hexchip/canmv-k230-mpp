@@ -1074,13 +1074,12 @@ k_s32 vo_writeback_test(void)
     resolution = &hx8399[resolution_index];
 
     k_vo_pub_attr attr;
-    k_vb_blk_handle block, block2;
+    k_vb_blk_handle block;
     k_video_frame_info vf_info;
     layer_info info;
     k_vo_wbc_attr wb_attr;
 
     void *pic_vaddr = NULL;
-    void *wb_vaddr = NULL;
     k_vo_layer chn_id = K_VO_LAYER2;//K_VO_LAYER1;//K_VO_LAYER2;
 
     memset(&vf_info, 0, sizeof(vf_info));
@@ -1111,7 +1110,6 @@ k_s32 vo_writeback_test(void)
     // info.attr.out_size.width = 1080;//640;
     // info.attr.out_size.height = 1920;//480;
 
-    wb_attr.pool_id = VB_INVALID_POOLID;
     wb_attr.blk_cnt = 4;
     wb_attr.dump_size.width = 1080;
     wb_attr.dump_size.height = 1920;
@@ -1332,9 +1330,9 @@ k_s32 sample_connector_init(k_connector_type type)
 
 k_s32 sample_connector_wbc_dump_frame(k_connector_type type)
 {
-    
+
     void *pic_vaddr = NULL;
-    
+
     k_vb_blk_handle block;
     k_video_frame_info vf_info;
     k_vo_wbc_attr wb_attr;
@@ -1360,7 +1358,7 @@ k_s32 sample_connector_wbc_dump_frame(k_connector_type type)
     // config osd
     // vo_creat_osd_test(osd_id, &osd);
 
-    // set frame 
+    // set frame
     vo_creat_layer_test(chn_id, &info);
     memset(&vf_info, 0, sizeof(vf_info));
 
@@ -1370,10 +1368,9 @@ k_s32 sample_connector_wbc_dump_frame(k_connector_type type)
     vf_info.v_frame.pixel_format = info.format;
     block = vo_insert_frame(&vf_info, &pic_vaddr);
 
-    wb_attr.pixel_format = PIXEL_FORMAT_YVU_PLANAR_420;
-    wb_attr.target_size.width = 1080;
-    wb_attr.target_size.height = 1920;
-    wb_attr.stride = wb_attr.target_size.width;
+    wb_attr.blk_cnt = 4;
+    wb_attr.dump_size.width = 1080;
+    wb_attr.dump_size.height = 1920;
     kd_mpi_vo_set_wbc_attr(&wb_attr);
 
     printf("kd_mpi_vo_set_wbc_attr ------------------- \n");
@@ -1407,7 +1404,7 @@ k_s32 sample_connector_wbc_dump_frame(k_connector_type type)
     kd_mpi_vo_enable_wbc();
 
     k_char select;
-    
+
     k_u8 *virt_addr = NULL;
     static k_u32 dump_count = 0;
     k_char *suffix = "yuv420sp";
@@ -1426,7 +1423,7 @@ k_s32 sample_connector_wbc_dump_frame(k_connector_type type)
             }
 
             virt_addr = kd_mpi_sys_mmap(dump_frame.v_frame.phys_addr[0], data_size);
-            if (virt_addr) 
+            if (virt_addr)
             {
                 memset(filename, 0 , sizeof(filename));
 
@@ -1435,17 +1432,17 @@ k_s32 sample_connector_wbc_dump_frame(k_connector_type type)
 
                 printf("save dump data to file(%s) dump_frame.v_frame.phys_addr[0] is %lx \n", filename, dump_frame.v_frame.phys_addr[0]);
                 FILE *file = fopen(filename, "wb+");
-                if (file) 
+                if (file)
                 {
                     fwrite(virt_addr, 1, data_size, file);
-                } 
+                }
                 else {
                     printf("sample_vicap, open dump file failed()\n");
                 }
 
                 fclose(file);
                 kd_mpi_sys_munmap(virt_addr, data_size);
-            } else 
+            } else
                 printf("sample_vicap, map dump addr failed.\n");
 
             ret = kd_mpi_wbc_dump_release(&dump_frame);

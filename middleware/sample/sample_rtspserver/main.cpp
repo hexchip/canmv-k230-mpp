@@ -17,10 +17,7 @@ static void sigHandler(int sig_no) {
 }
 
 static void Usage() {
-    std::cout << "Usage: ./sample_rtspsever.elf [-v] [-s <sensor_type>] [-t <codec_type>] [-w <width>] [-h <height>] [-b <bitrate_kbps>] [-a <semitones>]" << std::endl;
-    std::cout << "-v: enable video session" << std::endl;
-    std::cout << "-s: the sensor type, default 7 :" << std::endl;
-    std::cout << "       see camera sensor doc." << std::endl;
+    std::cout << "Usage: ./sample_rtspsever.elf [-t <codec_type>] [-w <width>] [-h <height>] [-b <bitrate_kbps>] [-a <semitones>]" << std::endl;
     std::cout << "-t: the video encoder type: h264/h265, default h265" << std::endl;
     std::cout << "-w: the video encoder width, default 1280" << std::endl;
     std::cout << "-h: the video encoder height, default 720" << std::endl;
@@ -32,49 +29,35 @@ static void Usage() {
 int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
     int result;
     opterr = 0;
-    while ((result = getopt(argc, argv, "Hvs:n:t:w:h:b:a:")) != -1) {
+    config.video_valid = true;
+    while ((result = getopt(argc, argv, "Hvn:t:w:h:b:a:")) != -1) {
         switch(result) {
         case 'H' : {
             Usage(); break;
-        }
-        case 'v' : {
-            config.video_valid = true;
-            break;
-        }
-        case 's' : {
-            int n = atoi(optarg);
-            if (n < 0 || n > 27) Usage();
-            config.sensor_type = (k_vicap_sensor_type)n;
-            config.video_valid = true;
-            break;
         }
         case 't': {
             std::string s = optarg;
             if (s == "h264") config.video_type = KdMediaVideoType::kVideoTypeH264;
             else if (s == "h265") config.video_type = KdMediaVideoType::kVideoTypeH264;
             else Usage();
-            config.video_valid = true;
             break;
         }
         case 'w': {
             int n = atoi(optarg);
             if (n < 0) Usage();
             config.venc_width = n;
-            config.video_valid = true;
             break;
         }
         case 'h': {
             int n = atoi(optarg);
             if (n < 0) Usage();
             config.venc_height = n;
-            config.video_valid = true;
             break;
         }
         case 'b': {
             int n = atoi(optarg);
             if (n < 0) Usage();
             config.bitrate_kbps = n;
-            config.video_valid = true;
             break;
         }
         case 'a': {
@@ -85,10 +68,6 @@ int parse_config(int argc, char *argv[], KdMediaInputConfig &config) {
         }
         default: Usage(); break;
         }
-    }
-    if (config.video_valid) {
-        // validate the parameters... TODO
-        std::cout << "Validate the input config, not implemented yet, TODO." << std::endl;
     }
     return 0;
 }

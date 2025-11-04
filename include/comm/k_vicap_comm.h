@@ -602,6 +602,7 @@ typedef struct {
     k_vicap_mcm_cfg cfg;
     k_vicap_chn mcm_chn;
     k_u32 buff_num;
+    k_s32 buffer_pool_id;// set to VB_INVALID_POOLID will auto create
     k_u32 work_mode;
 }k_vicap_mcm_chn_attr;
 

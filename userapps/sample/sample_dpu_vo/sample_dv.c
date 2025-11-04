@@ -64,11 +64,6 @@ static k_s32 sample_dv_vb_init()
     memset(&config, 0, sizeof(config));
     config.max_pool_cnt = 64;
 
-    /* vi vb init */
-    config.comm_pool[0].blk_cnt = DPU_FRAME_COUNT * 2 + 3;
-    config.comm_pool[0].blk_size = g_vdd_cfg[0].img_height * g_vdd_cfg[0].img_width * 3 / 2;
-    config.comm_pool[0].mode = VB_REMAP_MODE_NOCACHE;
-
     ret = kd_mpi_vb_set_config(&config);
     if(ret)
         printf("vb_set_config failed ret:%d\n", ret);
