@@ -50,7 +50,8 @@ static  void _help()
     printf("  type 9:sample aenc(ai->aenc->file) (api) module\n");
     printf("  type 10:sample adec(file->adec->ao) (api) module\n");
     printf("  type 11:sample overall test (ai->aenc->file file->adec->ao) module\n");
-    printf("  type 12:sample overall test (ai->aenc  adec->ao loopback ) module\n");
+    printf("  type 12:sample overall test (g711 ai->aenc  adec->ao loopback ) module\n");
+    printf("  type 13:sample overall test (opus ai->aenc  adec->ao loopback ) module\n");
     //printf("  type 9:overall audio test(ai->aenc adec->ao)\n");
     printf("-samplerate: set audio sample(8000 ~ 192000)\n");
     printf("-enablecodec: enable audio codec(0,1)\n");
@@ -125,10 +126,14 @@ static void *sample_thread_fn(void *arg)
         audio_sample_ai_aenc_adec_ao(0,0,0,0,0,0,g_sample_rate,g_bit_width,K_PT_G711A,g_wav_name,g_enable_audio3a);
         break;
     case 12:
-        printf("sample ai->aenc  adec->ao module (loopback)\n");
+        printf("sample ai->aenc  adec->ao module (g711,loopback)\n");
         audio_sample_ai_aenc_adec_ao_2(0,0,0,0,0,0,g_sample_rate,g_bit_width,K_PT_G711A,g_enable_audio3a);
         break;
     case 13:
+        printf("sample ai->aenc  adec->ao module (opus,loopback)\n");
+        audio_sample_ai_aenc_adec_ao_opus(0,0,0,0,0,0,g_sample_rate,g_bit_width,K_PT_OPUS,g_enable_audio3a);
+        break;
+    case 14:
         printf("sample  acodec\n");
         audio_sample_acodec();
         break;
@@ -231,7 +236,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (13 == g_type)
+    if (14 == g_type)
     {
         audio_sample_acodec();
         return 0;
@@ -251,7 +256,7 @@ int main(int argc, char *argv[])
     audio_sample_vb_init(K_TRUE, g_sample_rate);
     pthread_create(&g_pthread_handle, NULL, sample_thread_fn, NULL);
 
-    if (g_type >= 2 && g_type <= 12)
+    if (g_type >= 2 && g_type <= 13)
     {
         printf("enter q key to exit\n");
         while(getchar() != 'q')

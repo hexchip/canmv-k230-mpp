@@ -49,6 +49,7 @@ k_s32 audio_sample_ai_encode(k_bool use_sysbind, k_u32 samplerate,k_audio_bit_wi
 k_s32 audio_sample_decode_ao(k_bool use_sysbind,k_u32 samplerate,k_audio_bit_width bit_width,int decChannel,k_payload_type type,const char*filename); //解码文件->ao
 k_s32 audio_sample_ai_aenc_adec_ao(k_audio_dev ai_dev,k_ai_chn ai_chn,k_audio_dev ao_dev,k_ao_chn ao_chn,k_aenc_chn aenc_chn,k_adec_chn adec_chn,k_u32 samplerate,k_audio_bit_width bit_width,k_payload_type type,const char *load_filename, k_u32 enable_audio3a);
 k_s32 audio_sample_ai_aenc_adec_ao_2(k_audio_dev ai_dev,k_ai_chn ai_chn,k_audio_dev ao_dev,k_ao_chn ao_chn,k_aenc_chn aenc_chn,k_adec_chn adec_chn,k_u32 samplerate,k_audio_bit_width bit_width,k_payload_type type, k_u32 enable_audio3a);
+k_s32 audio_sample_ai_aenc_adec_ao_opus(k_audio_dev ai_dev,k_ai_chn ai_chn,k_audio_dev ao_dev,k_ao_chn ao_chn,k_aenc_chn aenc_chn,k_adec_chn adec_chn,k_u32 samplerate,k_audio_bit_width bit_width,k_payload_type type, k_u32 enable_audio3a);
 k_s32 audio_sample_acodec();
 k_s32 audio_sample_exit();
 #ifdef __cplusplus
